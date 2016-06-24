@@ -2,6 +2,12 @@
 
 This folder contains a middleware for safety recover the server from panic
 
+## Install
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/recovery
+```
+
 ## How to use
 
 ```go

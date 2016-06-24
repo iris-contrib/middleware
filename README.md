@@ -8,6 +8,12 @@ You can contribute also, just make a pull request, try to keep conversion, confi
 Middleware is just handler(s) which served before the main handler.
 
 
+## How can I install a middleware?
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/$FOLDERNAME
+```
+
 ## How can I register middleware?
 
 

@@ -13,6 +13,11 @@ More can be found here:
 
 Secure is an HTTP middleware for Go that facilitates some quick security wins.
 
+## Install
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/secure
+```
 
 ## How to use
 

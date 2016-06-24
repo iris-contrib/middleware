@@ -5,6 +5,11 @@ This folder contains a middleware for internationalization uses a third-party pa
 More can be found here:
 [https://github.com/Unknwon/i18n](https://github.com/Unknwon/i18n)
 
+## Install
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/i18n
+```
 
 ## Description
 

@@ -2,7 +2,6 @@
 
 This is a fork of the CORS middleware from [here](https://github.com/rs/cors/)
 
-
 ## Description
 
 It does some security work for you between the requests, a brief view on what you can set:
@@ -23,6 +22,11 @@ It does some security work for you between the requests, a brief view on what yo
 
 * OptionsPassthrough bool
 
+## Install
+
+```sh
+$ go get -u github.com/iris-contrib/middleware/cors
+```
 
 ## Options
 
