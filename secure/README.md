@@ -1,9 +1,5 @@
 ## Middleware information
-
-This was out-of-the-box iris supported before, but after Iris V1.1.0 it's not, so I had to modify it.
-
-
-This folder contains a middleware ported to Iris from a third-party middleware named secure.
+This was out-of-the-box iris supported before, but after Iris V1.1.0 it's not, so I had to modify it. This is a fork of the SECURE middleware from [here](https://github.com/unrolled/secure)
 
 More can be found here:
 [https://github.com/unrolled/secure](https://github.com/unrolled/secure)
