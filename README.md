@@ -14,6 +14,8 @@ Middleware is just handler(s) which served before the main handler.
 $ go get -u github.com/iris-contrib/middleware/$FOLDERNAME
 ```
 
+**NOTE**: When you install one middleware you will have all of them downloaded & installed, **no need** to re-run the go get foreach middeware.
+
 ## How can I register middleware?
 
 
