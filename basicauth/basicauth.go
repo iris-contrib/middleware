@@ -47,6 +47,11 @@ func Default(users map[string]string) iris.HandlerFunc {
 
 //
 
+// User returns the user from context key same as 'ctx.GetString("user")' but cannot be used by the developer, use the basicauth.Config.User func instead.
+func (b *basicAuthMiddleware) User(ctx *iris.Context) string {
+	return b.config.User(ctx)
+}
+
 func (b *basicAuthMiddleware) init() {
 	// pass the encoded users from the user's config's Users value
 	b.auth = make(encodedUsers, 0, len(b.config.Users))
