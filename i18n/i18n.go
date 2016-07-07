@@ -31,7 +31,7 @@ func (i *i18nMiddleware) Serve(ctx *iris.Context) {
 	}
 	// if it was not taken by the cookie, then set the cookie in order to have it
 	if !wasByCookie {
-		ctx.SetCookieKV("language", language)
+		ctx.SetCookieKV("lang", language)
 	}
 	if language == "" {
 		language = i.config.Default
