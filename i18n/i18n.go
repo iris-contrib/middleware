@@ -11,6 +11,7 @@ type i18nMiddleware struct {
 	config Config
 }
 
+// Serve serves the request, the actual middleware's job is here
 func (i *i18nMiddleware) Serve(ctx *iris.Context) {
 	wasByCookie := false
 	// try to get by url parameter
@@ -42,7 +43,7 @@ func (i *i18nMiddleware) Serve(ctx *iris.Context) {
 	ctx.Next()
 }
 
-// New returns the i18n middleware using optional configuration
+// New returns a new i18n middleware
 func New(c Config) iris.HandlerFunc {
 	if len(c.Languages) == 0 {
 		panic("You cannot use this middleware without set the Languages option, please try again and read the docs.")
