@@ -16,13 +16,12 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/recovery"
-	"os"
+	"github.com/iris-contrib/middleware/recovery"
 )
 
 func main() {
 
-	iris.Use(recovery.New(os.Stderr)) // optional parameter is the writer which the stack of the panic will be printed
+	iris.Use(recovery.New(iris.Logger)) // optional parameter is the logger which the stack of the panic will be printed
 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hi, let's panic")
