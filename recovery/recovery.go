@@ -1,6 +1,7 @@
 package recovery
 
 import (
+	"runtime/debug"
 	"time"
 
 	"github.com/iris-contrib/logger"
@@ -15,7 +16,7 @@ type recovery struct {
 func (r *recovery) Serve(ctx *iris.Context) {
 	defer func() {
 		if err := recover(); err != nil {
-			r.logger.Dangerf(time.Now().Format(logger.TimeFormat)+": Recovery from panic\n%s", err)
+			r.logger.Dangerf(time.Now().Format(logger.TimeFormat)+": Recovery from panic\n%s\n%s\n", err, debug.Stack())
 			//ctx.Panic just sends  http status 500 by default, but you can change it by: iris.OnPanic(func( c *iris.Context){})
 			ctx.Panic()
 		}
