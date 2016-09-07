@@ -21,8 +21,7 @@ import (
 
 func main() {
 
-	iris.Use(recovery.New(iris.Logger)) // optional parameter is the logger which the stack of the panic will be printed
-
+	iris.Use(recovery.Handler) 
 	iris.Get("/", func(ctx *iris.Context) {
 		ctx.Write("Hi, let's panic")
 		panic("errorrrrrrrrrrrrrrr")

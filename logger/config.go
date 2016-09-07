@@ -15,13 +15,11 @@ type Config struct {
 	Method bool
 	// Path displays the request path (bool)
 	Path bool
-	// EnableColors defaults to false
-	EnableColors bool
 }
 
 // DefaultConfig returns an options which all properties are true except EnableColors
 func DefaultConfig() Config {
-	return Config{true, true, true, true, false}
+	return Config{true, true, true, true}
 }
 
 // Merge merges the default with the given config and returns the result
