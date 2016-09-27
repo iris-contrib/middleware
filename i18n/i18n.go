@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"reflect"
 	"strings"
 
 	"github.com/Unknwon/i18n"
@@ -70,4 +71,19 @@ func New(c Config) iris.HandlerFunc {
 
 	i18n.SetDefaultLang(i.config.Default)
 	return i.Serve
+}
+
+// TranslatedMap returns translated map[string]interface{} from i18n structure
+func TranslatedMap(sourceInterface interface{}, ctx *iris.Context) map[string]interface{} {
+	iType := reflect.TypeOf(sourceInterface).Elem()
+	result := make(map[string]interface{})
+
+	for i := 0; i < iType.NumField(); i++ {
+		fieldName := reflect.TypeOf(sourceInterface).Elem().Field(i).Name
+		fieldValue := reflect.ValueOf(sourceInterface).Elem().Field(i).String()
+
+		result[fieldName] = ctx.GetFmt("translate")(fieldValue)
+	}
+
+	return result
 }
