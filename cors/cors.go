@@ -203,7 +203,7 @@ func New(options Options) *Cors {
 	// Allowed Methods
 	if len(options.AllowedMethods) == 0 {
 		// Default is spec's "simple" methods
-		c.allowedMethods = []string{"GET", "POST"}
+		c.allowedMethods = []string{"GET", "POST", "PUT", "DELETE", "CONNECT"}
 	} else {
 		c.allowedMethods = convert(options.AllowedMethods, strings.ToUpper)
 	}
@@ -237,11 +237,12 @@ func (c *Cors) Serve(ctx *iris.Context) {
 		// headers (see #1)
 		if c.optionPassthrough {
 			ctx.Next()
+		} else {
+			c.logf("preflight not passed")
 		}
 	} else {
 		c.logf("Serve: Actual request")
 		c.handleActualRequest(ctx)
-		ctx.Next()
 	}
 }
 
@@ -258,10 +259,15 @@ func (c *Cors) handlePreflight(ctx *iris.Context) {
 	ctx.Response.Header.Add("Vary", "Access-Control-Request-Method")
 	ctx.Response.Header.Add("Vary", "Access-Control-Request-Headers")
 
-	if origin == "" {
+	if c.allowedOriginsAll {
+		origin = "*"
+	}
+
+	if origin == "" && !c.allowedOriginsAll {
 		c.logf("  Preflight aborted: empty origin")
 		return
 	}
+
 	if !c.isOriginAllowed(origin) {
 		c.logf("  Preflight aborted: origin '%s' not allowed", origin)
 		return
@@ -293,7 +299,8 @@ func (c *Cors) handlePreflight(ctx *iris.Context) {
 	if c.maxAge > 0 {
 		ctx.Response.Header.Set("Access-Control-Max-Age", strconv.Itoa(c.maxAge))
 	}
-	c.logf("  Preflight response headers: %v", ctx.Response.Header)
+
+	//c.logf("  Preflight response headers: %v", ctx.Response.Header)
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
@@ -306,7 +313,11 @@ func (c *Cors) handleActualRequest(ctx *iris.Context) {
 	}
 
 	ctx.Response.Header.Add("Vary", "Origin")
-	if origin == "" {
+	if c.allowedOriginsAll {
+		origin = "*"
+	}
+
+	if origin == "" && !c.allowedOriginsAll {
 		c.logf("  Actual request no headers added: missing origin")
 		return
 	}
@@ -330,7 +341,8 @@ func (c *Cors) handleActualRequest(ctx *iris.Context) {
 	if c.allowCredentials {
 		ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
 	}
-	c.logf("  Actual response added headers: %v", ctx.Response.Header)
+	ctx.Next()
+	//c.logf("  Actual response added headers: %v", ctx.Response.Header)
 }
 
 // convenience method. checks if debugging is turned on before printing
