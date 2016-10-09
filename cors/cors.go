@@ -212,7 +212,7 @@ func New(options Options) *Cors {
 
 // Default creates a new Cors handler with default options
 func Default() *Cors {
-	return New(Options{OptionsPassthrough: true})
+	return New(Options{})
 }
 
 // DefaultCors creates a new Cors handler with default options
