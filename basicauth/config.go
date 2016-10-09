@@ -1,10 +1,9 @@
 package basicauth
 
 import (
-	"time"
-
 	"github.com/imdario/mergo"
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris"
+	"time"
 )
 
 const (
@@ -43,6 +42,6 @@ func (c Config) MergeSingle(cfg Config) (config Config) {
 }
 
 // User returns the user from context key same as 'ctx.GetString("user")' but cannot be used by the developer, this is only here in order to understand how you can get the authenticated username
-func (c Config) User(ctx context.IContext) string {
+func (c Config) User(ctx *iris.Context) string {
 	return ctx.GetString(c.ContextKey)
 }
