@@ -229,12 +229,16 @@ func (c *Cors) Conflicts() string {
 func (c *Cors) Serve(ctx *iris.Context) {
 	if ctx.MethodString() == iris.MethodOptions {
 		c.logf("Serve: Preflight request")
+		// Check preflight, if any error, http error will raise
+		c.handlePreflight(ctx)
 
-		pass := c.handlePreflight(ctx) || c.optionPassthrough
-		if pass {
+		// By pass for custom handle
+		if c.optionPassthrough {
 			ctx.Next()
 		} else {
+			// If don't have by pass through, set status ok
 			ctx.SetStatusCode(iris.StatusOK)
+			// Actual request will be serve
 		}
 
 	} else {
