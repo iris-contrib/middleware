@@ -1,6 +1,6 @@
 ## Repository information
 
-This Repository contains all middleware for the [Iris web framework](https://github.com/kataras/iris).
+This Repository contains all middleware for the [Iris web framework v4](https://github.com/kataras/iris/tree/4.0.0).
 
 You can contribute also, just make a pull request, try to keep conversion, configuration file: './mymiddleware/config.go' & middleware: './mymiddleware/mymiddleware.go'.
 
@@ -11,7 +11,7 @@ Middleware is just handler(s) which served before the main handler.
 ## How can I install a middleware?
 
 ```sh
-$ go get -u github.com/iris-contrib/middleware/$FOLDERNAME
+$ go get -u gopkg.in/iris-contrib/middleware.v4/$FOLDERNAME
 ```
 
 **NOTE**: When you install one middleware you will have all of them downloaded & installed, **no need** to re-run the go get foreach middeware.

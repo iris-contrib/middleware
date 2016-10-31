@@ -25,7 +25,7 @@ It does some security work for you between the requests, a brief view on what yo
 ## Install
 
 ```sh
-$ go get -u github.com/iris-contrib/middleware/cors
+$ go get -u gopkg.in/iris-contrib/middleware.v4/cors
 ```
 
 ## Options
@@ -79,7 +79,7 @@ package main
 
 import (
 	"github.com/kataras/iris"
-	"github.com/iris-contrib/middleware/cors"
+	"gopkg.in/iris-contrib/middleware.v4/cors"
 )
 
 func main() {

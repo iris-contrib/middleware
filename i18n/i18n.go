@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/Unknwon/i18n"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 )
 
 type i18nMiddleware struct {

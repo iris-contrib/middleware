@@ -6,7 +6,7 @@ This folder contains a middleware which is a bridge between Iris station's logge
 ## Install
 
 ```sh
-$ go get -u github.com/iris-contrib/middleware/logger
+$ go get -u gopkg.in/iris-contrib/middleware.v4/logger
 ```
 
 **Logs the incoming requests**

@@ -12,7 +12,7 @@ Secure is an HTTP middleware for Go that facilitates some quick security wins.
 ## Install
 
 ```sh
-$ go get -u github.com/iris-contrib/middleware/secure
+$ go get -u gopkg.in/iris-contrib/middleware.v4/secure
 ```
 
 ## How to use
@@ -21,8 +21,8 @@ $ go get -u github.com/iris-contrib/middleware/secure
 package main
 
 import (
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/secure"
+	"gopkg.in/kataras/iris.v4"
+	"gopkg.in/iris-contrib/middleware.v4/secure"
 )
 
 func main() {

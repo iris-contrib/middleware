@@ -1,11 +1,10 @@
 package jwt
 
-
 import (
-	"testing"
 	"github.com/dgrijalva/jwt-go"
-	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
-	"github.com/kataras/iris"
+	jwtmiddleware "github.com/iris-contrib/middleware.v4/jwt"
+	"gopkg.in/kataras/iris.v4"
+	"testing"
 )
 
 type Response struct {

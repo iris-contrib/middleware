@@ -2,7 +2,7 @@ package basicauth
 
 import (
 	"github.com/imdario/mergo"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 	"time"
 )
 

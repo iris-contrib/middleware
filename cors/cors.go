@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v4"
 )
 
 const toLower = 'a' - 'A'
