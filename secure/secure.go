@@ -96,19 +96,18 @@ func (s *Secure) SetBadHostHandler(handler iris.Handler) {
 	s.badHostHandler = handler
 }
 
-// Handler implements the iris.HandlerFunc for integration with iris.
-func (s *Secure) Handler(h iris.Handler) iris.Handler {
-	return iris.HandlerFunc(func(ctx *iris.Context) {
-		// Let secure process the request. If it returns an error,
-		// that indicates the request should not continue.
-		err := s.Process(ctx)
+// Serve implements the iris.HandlerFunc for integration with iris.
+func (s *Secure) Serve(ctx *iris.Context) {
+	// Let secure process the request. If it returns an error,
+	// that indicates the request should not continue.
+	err := s.Process(ctx)
 
-		// If there was an error, do not continue.
-		if err != nil {
-			return
-		}
-		h.Serve(ctx)
-	})
+	// If there was an error, do not continue.
+	if err != nil {
+		return
+	}
+
+	ctx.ext()
 }
 
 // Process runs the actual checks and returns an error if the middleware chain should stop.

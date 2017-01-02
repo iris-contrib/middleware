@@ -1,5 +1,4 @@
 ## Middleware information
-This was out-of-the-box iris supported before, but after Iris V1.1.0 it's not, so I had to modify it. This is a fork of the SECURE middleware from [here](https://github.com/unrolled/secure)
 
 More can be found here:
 [https://github.com/unrolled/secure](https://github.com/unrolled/secure)
@@ -46,24 +45,13 @@ func main() {
 		IsDevelopment: true, // This will cause the AllowedHosts, SSLRedirect, and STSSeconds/STSIncludeSubdomains options to be ignored during development. When deploying to production, be sure to set this to false.
 	})
 
-	iris.UseFunc(func(c *iris.Context) {
-		err := s.Process(c)
-
-		// If there was an error, do not continue.
-		if err != nil {
-			return
-		}
-
-		c.Next()
-	})
+	iris.Use(s)
 
 	iris.Get("/home", func(c *iris.Context) {
-		c.Write("Hello from /home")
+		c.Writef("Hello from /home")
 	})
 
-	println("Server is running at :8080")
 	iris.Listen(":8080")
-
 }
 
 
