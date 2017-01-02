@@ -107,7 +107,7 @@ func (s *Secure) Serve(ctx *iris.Context) {
 		return
 	}
 
-	ctx.ext()
+	ctx.Next()
 }
 
 // Process runs the actual checks and returns an error if the middleware chain should stop.
