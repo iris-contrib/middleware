@@ -17,8 +17,8 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 	var date, status, ip, method, path string
 	var latency time.Duration
 	var startTime, endTime time.Time
-	path = ctx.PathString()
-	method = ctx.MethodString()
+	path = ctx.Path()
+	method = ctx.Method()
 
 	startTime = time.Now()
 
@@ -29,7 +29,7 @@ func (l *loggerMiddleware) Serve(ctx *iris.Context) {
 	latency = endTime.Sub(startTime)
 
 	if l.config.Status {
-		status = strconv.Itoa(ctx.Response.StatusCode())
+		status = strconv.Itoa(ctx.ResponseWriter.StatusCode())
 	}
 
 	if l.config.IP {

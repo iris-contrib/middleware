@@ -12,14 +12,14 @@ import (
 // Usage:
 // iris.Get("debug/pprof/*action", pprof.New())
 func New() iris.HandlerFunc {
-	indexHandler := iris.ToHandlerFunc(pprof.Index)
-	cmdlineHandler := iris.ToHandlerFunc(pprof.Cmdline)
-	profileHandler := iris.ToHandlerFunc(pprof.Profile)
-	symbolHandler := iris.ToHandlerFunc(pprof.Symbol)
-	goroutineHandler := iris.ToHandlerFunc(pprof.Handler("goroutine"))
-	heapHandler := iris.ToHandlerFunc(pprof.Handler("heap"))
-	threadcreateHandler := iris.ToHandlerFunc(pprof.Handler("threadcreate"))
-	debugBlockHandler := iris.ToHandlerFunc(pprof.Handler("block"))
+	indexHandler := iris.ToHandler(pprof.Index)
+	cmdlineHandler := iris.ToHandler(pprof.Cmdline)
+	profileHandler := iris.ToHandler(pprof.Profile)
+	symbolHandler := iris.ToHandler(pprof.Symbol)
+	goroutineHandler := iris.ToHandler(pprof.Handler("goroutine"))
+	heapHandler := iris.ToHandler(pprof.Handler("heap"))
+	threadcreateHandler := iris.ToHandler(pprof.Handler("threadcreate"))
+	debugBlockHandler := iris.ToHandler(pprof.Handler("block"))
 
 	return iris.HandlerFunc(func(ctx *iris.Context) {
 		ctx.SetContentType("text/html; charset=" + ctx.Framework().Config.Charset)

@@ -123,7 +123,7 @@ func FromFirst(extractors ...TokenExtractor) TokenExtractor {
 // CheckJWT the main functionality, checks for token
 func (m *Middleware) CheckJWT(ctx *iris.Context) error {
 	if !m.Config.EnableAuthOnOptions {
-		if ctx.MethodString() == iris.MethodOptions {
+		if ctx.Method() == iris.MethodOptions {
 			return nil
 		}
 	}

@@ -130,7 +130,7 @@ func (s *Secure) Process(ctx *iris.Context) error {
 	}
 
 	// Determine if we are on HTTPS.
-	isSSL := strings.EqualFold(string(ctx.Request.URI().Scheme()), "https") || ctx.IsTLS()
+	isSSL := strings.EqualFold(string(ctx.Request.URL.Scheme), "https")
 	if !isSSL {
 		for k, v := range s.opt.SSLProxyHeaders {
 			if ctx.RequestHeader(k) == v {
@@ -142,12 +142,12 @@ func (s *Secure) Process(ctx *iris.Context) error {
 
 	// SSL check.
 	if s.opt.SSLRedirect && !isSSL && !s.opt.IsDevelopment {
-		url := ctx.Request.URI()
-		url.SetScheme("https")
-		url.SetHostBytes(ctx.Host())
+		url := ctx.Request.URL
+		url.Scheme = "https"
+		url.Host = ctx.Host()
 
 		if len(s.opt.SSLHost) > 0 {
-			url.SetHost(s.opt.SSLHost)
+			url.Host = s.opt.SSLHost
 		}
 
 		status := iris.StatusMovedPermanently
@@ -170,35 +170,35 @@ func (s *Secure) Process(ctx *iris.Context) error {
 		if s.opt.STSPreload {
 			stsSub += stsPreloadString
 		}
+		ctx.SetHeader(stsHeader, fmt.Sprintf("max-age=%d%s", s.opt.STSSeconds, stsSub))
 
-		ctx.Response.Header.Add(stsHeader, fmt.Sprintf("max-age=%d%s", s.opt.STSSeconds, stsSub))
 	}
 
 	// Frame Options header.
 	if len(s.opt.CustomFrameOptionsValue) > 0 {
-		ctx.Response.Header.Add(frameOptionsHeader, s.opt.CustomFrameOptionsValue)
+		ctx.SetHeader(frameOptionsHeader, s.opt.CustomFrameOptionsValue)
 	} else if s.opt.FrameDeny {
-		ctx.Response.Header.Add(frameOptionsHeader, frameOptionsValue)
+		ctx.SetHeader(frameOptionsHeader, frameOptionsValue)
 	}
 
 	// Content Type Options header.
 	if s.opt.ContentTypeNosniff {
-		ctx.Response.Header.Add(contentTypeHeader, contentTypeValue)
+		ctx.SetHeader(contentTypeHeader, contentTypeValue)
 	}
 
 	// XSS Protection header.
 	if s.opt.BrowserXSSFilter {
-		ctx.Response.Header.Add(xssProtectionHeader, xssProtectionValue)
+		ctx.SetHeader(xssProtectionHeader, xssProtectionValue)
 	}
 
 	// HPKP header.
 	if len(s.opt.PublicKey) > 0 && isSSL && !s.opt.IsDevelopment {
-		ctx.Response.Header.Add(hpkpHeader, s.opt.PublicKey)
+		ctx.SetHeader(hpkpHeader, s.opt.PublicKey)
 	}
 
 	// Content Security Policy header.
 	if len(s.opt.ContentSecurityPolicy) > 0 {
-		ctx.Response.Header.Add(cspHeader, s.opt.ContentSecurityPolicy)
+		ctx.SetHeader(cspHeader, s.opt.ContentSecurityPolicy)
 	}
 
 	return nil

@@ -227,7 +227,7 @@ func (c *Cors) Conflicts() string {
 
 // Serve serves the middleware
 func (c *Cors) Serve(ctx *iris.Context) {
-	if ctx.MethodString() == iris.MethodOptions {
+	if ctx.Method() == iris.MethodOptions {
 		c.logf("Serve: Preflight request")
 		// Check preflight, if any error, http error will raise
 		c.handlePreflight(ctx)
@@ -251,14 +251,14 @@ func (c *Cors) Serve(ctx *iris.Context) {
 func (c *Cors) handlePreflight(ctx *iris.Context) bool {
 	origin := ctx.RequestHeader("Origin")
 
-	if ctx.MethodString() != iris.MethodOptions {
-		c.logf("  Preflight aborted: %s!=OPTIONS", ctx.MethodString())
+	if ctx.Method() != iris.MethodOptions {
+		c.logf("  Preflight aborted: %s!=OPTIONS", ctx.Method())
 		return false
 	}
 	// Always set Vary headers
-	ctx.Response.Header.Add("Vary", "Origin")
-	ctx.Response.Header.Add("Vary", "Access-Control-Request-Method")
-	ctx.Response.Header.Add("Vary", "Access-Control-Request-Headers")
+	ctx.SetHeader("Vary", "Origin")
+	ctx.SetHeader("Vary", "Access-Control-Request-Method")
+	ctx.SetHeader("Vary", "Access-Control-Request-Headers")
 
 	if c.allowedOriginsAll {
 		origin = "*"
@@ -284,24 +284,24 @@ func (c *Cors) handlePreflight(ctx *iris.Context) bool {
 		c.logf("  Preflight aborted: headers '%v' not allowed", reqHeaders)
 		return false
 	}
-	ctx.Response.Header.Set("Access-Control-Allow-Origin", origin)
+	ctx.SetHeader("Access-Control-Allow-Origin", origin)
 	// Spec says: Since the list of methods can be unbounded, simply returning the method indicated
 	// by Access-Control-Request-Method (if supported) can be enough
-	ctx.Response.Header.Set("Access-Control-Allow-Methods", strings.ToUpper(reqMethod))
+	ctx.SetHeader("Access-Control-Allow-Methods", strings.ToUpper(reqMethod))
 	if len(reqHeaders) > 0 {
 
 		// Spec says: Since the list of headers can be unbounded, simply returning supported headers
 		// from Access-Control-Request-Headers can be enough
-		ctx.Response.Header.Set("Access-Control-Allow-Headers", strings.Join(reqHeaders, ", "))
+		ctx.SetHeader("Access-Control-Allow-Headers", strings.Join(reqHeaders, ", "))
 	}
 	if c.allowCredentials {
-		ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+		ctx.SetHeader("Access-Control-Allow-Credentials", "true")
 	}
 	if c.maxAge > 0 {
-		ctx.Response.Header.Set("Access-Control-Max-Age", strconv.Itoa(c.maxAge))
+		ctx.SetHeader("Access-Control-Max-Age", strconv.Itoa(c.maxAge))
 	}
 
-	c.logf("  Preflight response headers: %v", ctx.Response.Header.String())
+	c.logf("  Preflight response headers: %v", ctx.ResponseWriter.Header())
 	return true
 }
 
@@ -309,12 +309,12 @@ func (c *Cors) handlePreflight(ctx *iris.Context) bool {
 func (c *Cors) handleActualRequest(ctx *iris.Context) {
 	origin := ctx.RequestHeader("Origin")
 
-	if ctx.MethodString() == iris.MethodOptions {
-		c.logf("  Actual request no headers added: method == %s", ctx.MethodString())
+	if ctx.Method() == iris.MethodOptions {
+		c.logf("  Actual request no headers added: method == %s", ctx.Method())
 		return
 	}
 
-	ctx.Response.Header.Add("Vary", "Origin")
+	ctx.SetHeader("Vary", "Origin")
 	if c.allowedOriginsAll {
 		origin = "*"
 	}
@@ -332,16 +332,16 @@ func (c *Cors) handleActualRequest(ctx *iris.Context) {
 	// POST. Access-Control-Allow-Methods is only used for pre-flight requests and the
 	// spec doesn't instruct to check the allowed methods for simple cross-origin requests.
 	// We think it's a nice feature to be able to have control on those methods though.
-	if !c.isMethodAllowed(ctx.MethodString()) {
-		c.logf("  Actual request no headers added: method '%s' not allowed", ctx.MethodString())
+	if !c.isMethodAllowed(ctx.Method()) {
+		c.logf("  Actual request no headers added: method '%s' not allowed", ctx.Method())
 		return
 	}
-	ctx.Response.Header.Set("Access-Control-Allow-Origin", origin)
+	ctx.SetHeader("Access-Control-Allow-Origin", origin)
 	if len(c.exposedHeaders) > 0 {
-		ctx.Response.Header.Set("Access-Control-Expose-Headers", strings.Join(c.exposedHeaders, ", "))
+		ctx.SetHeader("Access-Control-Expose-Headers", strings.Join(c.exposedHeaders, ", "))
 	}
 	if c.allowCredentials {
-		ctx.Response.Header.Set("Access-Control-Allow-Credentials", "true")
+		ctx.SetHeader("Access-Control-Allow-Credentials", "true")
 	}
 	ctx.Next()
 
