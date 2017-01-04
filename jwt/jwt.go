@@ -28,7 +28,7 @@ type Middleware struct {
 // OnError default error handler
 func OnError(ctx *iris.Context, err string) {
 	ctx.SetStatusCode(iris.StatusUnauthorized)
-	ctx.SetBodyString(err)
+	ctx.Writef(err)
 }
 
 // New constructs a new Secure instance with supplied options.
