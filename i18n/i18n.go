@@ -15,33 +15,45 @@ type i18nMiddleware struct {
 // Serve serves the request, the actual middleware's job is here
 func (i *i18nMiddleware) Serve(ctx *iris.Context) {
 	wasByCookie := false
-	// try to get by url parameter
-	language := ctx.URLParam(i.config.URLParameter)
 
-	if language == "" {
-		// then try to take the lang field from the cookie
-		language = ctx.GetCookie("lang")
+	language := i.config.Default
+	if ctx.GetString(iris.TranslateLanguageContextKey) == "" {
+		// try to get by url parameter
+		language = ctx.URLParam(i.config.URLParameter)
 
-		if len(language) > 0 {
-			wasByCookie = true
-		} else {
-			// try to get by the request headers(?)
-			if langHeader := ctx.RequestHeader("Accept-Language"); i18n.IsExist(langHeader) {
-				language = langHeader
+		if language == "" {
+			// then try to take the lang field from the cookie
+			language = ctx.GetCookie(iris.TranslateLanguageContextKey)
+
+			if len(language) > 0 {
+				wasByCookie = true
+			} else {
+				// try to get by the request headers(?)
+				if langHeader := ctx.RequestHeader("Accept-Language"); i18n.IsExist(langHeader) {
+					language = langHeader
+				}
 			}
 		}
-	}
-	// if it was not taken by the cookie, then set the cookie in order to have it
-	if !wasByCookie {
-		ctx.SetCookieKV("lang", language)
-	}
-	if language == "" {
-		language = i.config.Default
+		// if it was not taken by the cookie, then set the cookie in order to have it
+		if !wasByCookie {
+			ctx.SetCookieKV(iris.TranslateLanguageContextKey, language)
+		}
+		if language == "" {
+			language = i.config.Default
+		}
+		ctx.Set(iris.TranslateLanguageContextKey, language)
 	}
 	locale := i18n.Locale{Lang: language}
-	ctx.Set("language", language)
-	ctx.Set("translate", locale.Tr)
+
+	ctx.Set(iris.TranslateFunctionContextKey, locale.Tr)
 	ctx.Next()
+}
+
+// Translate returns the translated word from a context
+// the second parameter is the key of the world or line inside the .ini file
+// the third parameter is the '%s' of the world or line inside the .ini file
+func Translate(ctx *iris.Context, format string, args ...interface{}) string {
+	return ctx.Translate(format, args...)
 }
 
 // New returns a new i18n middleware
@@ -82,7 +94,7 @@ func TranslatedMap(sourceInterface interface{}, ctx *iris.Context) map[string]in
 		fieldName := reflect.TypeOf(sourceInterface).Elem().Field(i).Name
 		fieldValue := reflect.ValueOf(sourceInterface).Elem().Field(i).String()
 
-		result[fieldName] = ctx.GetFmt("translate")(fieldValue)
+		result[fieldName] = Translate(ctx, fieldValue)
 	}
 
 	return result
