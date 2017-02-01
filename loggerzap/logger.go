@@ -3,8 +3,9 @@ package loggerzap
 import (
 	"strconv"
 	"time"
-  "github.com/uber-go/zap"
+
 	"github.com/kataras/iris"
+	"github.com/uber-go/zap"
 )
 
 type loggerzapMiddleware struct {
@@ -15,7 +16,7 @@ type loggerzapMiddleware struct {
 // Serve serves the middleware
 func (l *loggerzapMiddleware) Serve(ctx *iris.Context) {
 	//all except latency to string
-	var date, status, ip, method, path string
+	var status, ip, method, path string
 	var latency time.Duration
 	var startTime, endTime time.Time
 	path = ctx.Path()
@@ -45,7 +46,7 @@ func (l *loggerzapMiddleware) Serve(ctx *iris.Context) {
 	}
 
 	//finally print the logs
-	l.logger.Info("[IRIS] ", zap.String("status",status), zap.Duration("latency", latency), zap.String("ip", ip), zap.String("method", method), zap.String("path", path))
+	l.logger.Info("[IRIS] ", zap.String("status", status), zap.Duration("latency", latency), zap.String("ip", ip), zap.String("method", method), zap.String("path", path))
 
 }
 
@@ -54,6 +55,6 @@ func (l *loggerzapMiddleware) Serve(ctx *iris.Context) {
 func New(cfg ...Config) iris.HandlerFunc {
 	c := DefaultConfig().Merge(cfg)
 	l := &loggerzapMiddleware{config: c}
-  l.logger = zap.New(zap.NewTextEncoder())
+	l.logger = zap.New(zap.NewTextEncoder())
 	return l.Serve
 }
