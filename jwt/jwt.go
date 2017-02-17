@@ -7,8 +7,22 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v6"
 )
+
+// Iris provides some basic middleware, most for your learning courve.
+// You can use any net/http compatible middleware with iris.ToHandler wrapper.
+//
+// JWT net/http video tutorial for golang newcomers: https://www.youtube.com/watch?v=dgJFeqeXVKw
+//
+// Unlike the other middleware, this middleware was cloned from external source: https://github.com/auth0/go-jwt-middleware
+// (because it used "context" to define the user but we don't need that so a simple iris.ToHandler wouldn't work as expected.)
+// jwt_test.go also didn't created by me:
+// 28 Jul 2016
+// @heralight heralight add jwt unit test.
+//
+// So if this doesn't works for you just try other net/http compatible middleware and bind it via `iris.ToHandler(myHandlerWithNext)`,
+// It's here for your learning curve.
 
 // A function called whenever an error is encountered
 type errorHandler func(*iris.Context, string)

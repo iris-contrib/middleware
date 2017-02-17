@@ -1,6 +1,5 @@
-/*
-This has been modified to work with Iris, credits goes to https://github.com/unrolled/secure , I done nothing special here.
-*/
+// This has been cloned to work with Iris,
+// credits goes to https://github.com/unrolled/secure , I did nothing special here.
 
 package secure
 
@@ -8,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v6"
 )
 
 const (

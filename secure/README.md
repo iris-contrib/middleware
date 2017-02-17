@@ -20,7 +20,7 @@ $ go get -u github.com/iris-contrib/middleware/secure
 package main
 
 import (
-	"github.com/kataras/iris"
+	"gopkg.in/kataras/iris.v6"
 	"github.com/iris-contrib/middleware/secure"
 )
 
@@ -45,13 +45,14 @@ func main() {
 		IsDevelopment: true, // This will cause the AllowedHosts, SSLRedirect, and STSSeconds/STSIncludeSubdomains options to be ignored during development. When deploying to production, be sure to set this to false.
 	})
 
-	iris.Use(s)
+	app := iris.New()
+	app.Use(s)
 
-	iris.Get("/home", func(c *iris.Context) {
-		c.Writef("Hello from /home")
+	app.Get("/home", func(ctx *iris.Context) {
+		ctx.Writef("Hello from /home")
 	})
 
-	iris.Listen(":8080")
+	app.Listen(":8080")
 }
 
 
