@@ -5,12 +5,15 @@ import (
 	// if you want support for the cors' allowed methods.
 	"github.com/iris-contrib/middleware/cors"
 	"gopkg.in/kataras/iris.v6"
+	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
 )
 
 func main() {
 
 	app := iris.New()
 	app.Adapt(iris.DevLogger())
+	app.Adapt(httprouter.New())
+
 	crs := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowCredentials: true,
