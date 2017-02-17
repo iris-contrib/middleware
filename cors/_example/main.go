@@ -1,6 +1,8 @@
 package main
 
 import (
+	// look the https://github.com/kataras/iris/blob/v6/adaptors/cors/_example/main.go
+	// if you want support for the cors' allowed methods.
 	"github.com/iris-contrib/middleware/cors"
 	"gopkg.in/kataras/iris.v6"
 )
