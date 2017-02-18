@@ -2,7 +2,7 @@ package jwt
 
 import (
 	"github.com/dgrijalva/jwt-go"
-	jwtmiddleware "github.com/iris-contrib/middleware.v4/jwt"
+	jwtmiddleware "gopkg.in/iris-contrib/middleware.v4/jwt"
 	"gopkg.in/kataras/iris.v4"
 	"testing"
 )
