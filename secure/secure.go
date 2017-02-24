@@ -5,6 +5,7 @@ package secure
 
 import (
 	"fmt"
+	"net"
 	"strings"
 
 	"gopkg.in/kataras/iris.v6"
@@ -63,6 +64,8 @@ type Options struct {
 	// When developing, the AllowedHosts, SSL, and STS options can cause some unwanted effects. Usually testing happens on http, not https, and on localhost, not your production domain... so set this to true for dev environment.
 	// If you would like your development environment to mimic production with complete Host blocking, SSL redirects, and STS headers, leave this as false. Default if false.
 	IsDevelopment bool
+	// Option to ignore private lan ips. This could be helpful to prevent internal health checks from upgrading to SSL
+	IgnorePrivateIPs bool
 }
 
 // Secure is a middleware that helps setup a few basic security features. A single secure.Options struct can be
@@ -111,6 +114,11 @@ func (s *Secure) Serve(ctx *iris.Context) {
 
 // Process runs the actual checks and returns an error if the middleware chain should stop.
 func (s *Secure) Process(ctx *iris.Context) error {
+	// We've hit an private ip and the option is enabled
+	if s.opt.IgnorePrivateIPs && isPrivateSubnet(net.ParseIP(ctx.RemoteAddr())) {
+		return nil
+	}
+
 	// Allowed hosts check.
 	if len(s.opt.AllowedHosts) > 0 && !s.opt.IsDevelopment {
 		isGoodHost := false
