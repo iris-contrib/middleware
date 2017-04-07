@@ -15,12 +15,12 @@ import (
 )
 
 func myHandler(ctx *iris.Context) {
-	user := ctx.Get("user").(*jwt.Token)
+	token := JwtMiddleware.Get(ctx)
 
 	ctx.Writef("This is an authenticated request\n")
 	ctx.Writef("Claim content:\n")
 
-	ctx.Writef("%s", user.Signature)
+	ctx.Writef("%s", token.Signature)
 
 }
 
@@ -28,18 +28,16 @@ func main() {
 	app := iris.New()
 	app.Adapt(httprouter.New()) // adapt a router first of all
 
-	jwtHandler := jwtmiddleware.New(jwtmiddleware.Config{
+	JwtMiddleware = jwtmiddleware.New(jwtmiddleware.Config{
 		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 			return []byte("My Secret"), nil
 		},
-		// When set, the middleware verifies that tokens are signed with the specific signing algorithm
-		// If the signing method is not constant the ValidationKeyGetter callback can be used to implement additional checks
-		// Important to avoid security issues described here: https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
 		SigningMethod: jwt.SigningMethodHS256,
+		Extractor: jwtmiddleware.FromFirst(
+			jwtmiddleware.FromAuthHeader,
+			jwtmiddleware.FromParameter("auth_code")),
 	})
 
-	app.Use(jwtHandler) // or .Get("/ping", jwtHandler.Serve, myHandler)
-
-	app.Get("/ping", myHandler)
+	app.Get("/ping", jwtmiddleware.Serve, myHandler)
 	app.Listen(":3001")
 } // don't forget to look ../jwt_test.go to seee how to set your own custom claims

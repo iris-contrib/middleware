@@ -3,8 +3,8 @@ package jwt
 import "github.com/dgrijalva/jwt-go"
 
 const (
-	//DefaultContextKey jwt
-	DefaultContextKey = "jwt"
+	//DefaultContextKey user
+	DefaultContextKey = "user"
 )
 
 // Config is a struct for specifying configuration options for the jwt middleware.
@@ -15,7 +15,7 @@ type Config struct {
 	ValidationKeyGetter jwt.Keyfunc
 	// The name of the property in the request where the user (&token) information
 	// from the JWT will be stored.
-	// Default value: "jwt"
+	// Default value: "user"
 	ContextKey string
 	// The function that will be called when there's an error validating the token
 	// Default value:
