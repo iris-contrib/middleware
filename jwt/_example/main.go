@@ -19,7 +19,7 @@ import (
 )
 
 func myHandler(ctx context.Context) {
-	user := ctx.Values().Get("user").(*jwt.Token)
+	user := ctx.Values().Get("jwt").(*jwt.Token)
 
 	ctx.Writef("This is an authenticated request\n")
 	ctx.Writef("Claim content:\n")
