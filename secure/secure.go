@@ -8,7 +8,8 @@ import (
 	"net"
 	"strings"
 
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
 )
 
 const (
@@ -25,8 +26,9 @@ const (
 	hpkpHeader          = "Public-Key-Pins"
 )
 
-func defaultBadHostHandler(ctx *iris.Context) {
-	ctx.Text(iris.StatusInternalServerError, "Bad Host")
+func defaultBadHostHandler(ctx context.Context) {
+	ctx.StatusCode(iris.StatusInternalServerError)
+	ctx.Text("Bad Host")
 }
 
 // Options is a struct for specifying configuration options for the secure.Secure middleware.
@@ -75,7 +77,7 @@ type Secure struct {
 	opt Options
 
 	// Handlers for when an error occurs (ie bad host).
-	badHostHandler iris.Handler
+	badHostHandler context.Handler
 }
 
 // New constructs a new Secure instance with supplied options.
@@ -89,17 +91,17 @@ func New(options ...Options) *Secure {
 
 	return &Secure{
 		opt:            o,
-		badHostHandler: iris.HandlerFunc(defaultBadHostHandler),
+		badHostHandler: defaultBadHostHandler,
 	}
 }
 
 // SetBadHostHandler sets the handler to call when secure rejects the host name.
-func (s *Secure) SetBadHostHandler(handler iris.Handler) {
+func (s *Secure) SetBadHostHandler(handler context.Handler) {
 	s.badHostHandler = handler
 }
 
-// Serve implements the iris.HandlerFunc for integration with iris.
-func (s *Secure) Serve(ctx *iris.Context) {
+// Serve implements the context.HandlerFunc for integration with iris.
+func (s *Secure) Serve(ctx context.Context) {
 	// Let secure process the request. If it returns an error,
 	// that indicates the request should not continue.
 	err := s.Process(ctx)
@@ -113,7 +115,7 @@ func (s *Secure) Serve(ctx *iris.Context) {
 }
 
 // Process runs the actual checks and returns an error if the middleware chain should stop.
-func (s *Secure) Process(ctx *iris.Context) error {
+func (s *Secure) Process(ctx context.Context) error {
 	// We've hit an private ip and the option is enabled
 	if s.opt.IgnorePrivateIPs && isPrivateSubnet(net.ParseIP(ctx.RemoteAddr())) {
 		return nil
@@ -130,16 +132,16 @@ func (s *Secure) Process(ctx *iris.Context) error {
 		}
 
 		if !isGoodHost {
-			s.badHostHandler.Serve(ctx)
+			s.badHostHandler(ctx)
 			return fmt.Errorf("Bad host name: %s", string(ctx.Host()))
 		}
 	}
 
 	// Determine if we are on HTTPS.
-	isSSL := strings.EqualFold(string(ctx.Request.URL.Scheme), "https")
+	isSSL := strings.EqualFold(string(ctx.Request().URL.Scheme), "https")
 	if !isSSL {
 		for k, v := range s.opt.SSLProxyHeaders {
-			if ctx.RequestHeader(k) == v {
+			if ctx.GetHeader(k) == v {
 				isSSL = true
 				break
 			}
@@ -148,7 +150,7 @@ func (s *Secure) Process(ctx *iris.Context) error {
 
 	// SSL check.
 	if s.opt.SSLRedirect && !isSSL && !s.opt.IsDevelopment {
-		url := ctx.Request.URL
+		url := ctx.Request().URL
 		url.Scheme = "https"
 		url.Host = ctx.Host()
 
@@ -176,35 +178,35 @@ func (s *Secure) Process(ctx *iris.Context) error {
 		if s.opt.STSPreload {
 			stsSub += stsPreloadString
 		}
-		ctx.SetHeader(stsHeader, fmt.Sprintf("max-age=%d%s", s.opt.STSSeconds, stsSub))
+		ctx.Header(stsHeader, fmt.Sprintf("max-age=%d%s", s.opt.STSSeconds, stsSub))
 
 	}
 
 	// Frame Options header.
 	if len(s.opt.CustomFrameOptionsValue) > 0 {
-		ctx.SetHeader(frameOptionsHeader, s.opt.CustomFrameOptionsValue)
+		ctx.Header(frameOptionsHeader, s.opt.CustomFrameOptionsValue)
 	} else if s.opt.FrameDeny {
-		ctx.SetHeader(frameOptionsHeader, frameOptionsValue)
+		ctx.Header(frameOptionsHeader, frameOptionsValue)
 	}
 
 	// Content Type Options header.
 	if s.opt.ContentTypeNosniff {
-		ctx.SetHeader(contentTypeHeader, contentTypeValue)
+		ctx.Header(contentTypeHeader, contentTypeValue)
 	}
 
 	// XSS Protection header.
 	if s.opt.BrowserXSSFilter {
-		ctx.SetHeader(xssProtectionHeader, xssProtectionValue)
+		ctx.Header(xssProtectionHeader, xssProtectionValue)
 	}
 
 	// HPKP header.
 	if len(s.opt.PublicKey) > 0 && isSSL && !s.opt.IsDevelopment {
-		ctx.SetHeader(hpkpHeader, s.opt.PublicKey)
+		ctx.Header(hpkpHeader, s.opt.PublicKey)
 	}
 
 	// Content Security Policy header.
 	if len(s.opt.ContentSecurityPolicy) > 0 {
-		ctx.SetHeader(cspHeader, s.opt.ContentSecurityPolicy)
+		ctx.Header(cspHeader, s.opt.ContentSecurityPolicy)
 	}
 
 	return nil
