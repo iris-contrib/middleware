@@ -1,23 +1,12 @@
 package cors
 
-//  +------------------------------------------------------------+
-//  | Middleware usage                                           |
-//  +------------------------------------------------------------+
-//
-// import (
-//  "gopkg.in/kataras/iris.v6"
-//  "gopkg.in/kataras/iris.v6/adaptors/httprouter"
-//  "github.com/iris-contrib/middleware/cors"
-// )
-//
-// app := iris.New()
-// app.Adapt(httprouter.New())
-// app.Post("/user", cors.Default(), func(ctx *iris.Context){})
-// app.Listen(":8080")
-
 import (
+	"net/http"
+
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/core/handlerconv"
+
 	"github.com/rs/cors"
-	"gopkg.in/kataras/iris.v6"
 )
 
 // Options is a configuration container to setup the CORS.
@@ -29,12 +18,21 @@ type Options cors.Options
 // with the provided options.
 // Unlike the cors wrapper, this middleware can be registered to specific routes,
 // Options.AllowedMethods is missing
-func New(opts Options) iris.HandlerFunc {
-	return iris.ToHandler(cors.New(cors.Options(opts)).ServeHTTP)
+func New(opts Options) context.Handler {
+	h := handlerconv.FromStdWithNext(WrapNext(opts))
+	return h
 }
 
 // Default returns a new cors per-route middleware with the default settings:
 // allow all origins, allow methods: GET and POST
-func Default() iris.HandlerFunc {
+func Default() context.Handler {
 	return New(Options{})
+}
+
+// WrapNext is the same as New but it is being used to wrap the entire
+// Iris' router, even before the method and path matching,
+// i.e: app.WrapRouter(WrapNext(Options{...}))
+func WrapNext(opts Options) func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
+	h := cors.New(cors.Options(opts)).ServeHTTP
+	return h
 }
