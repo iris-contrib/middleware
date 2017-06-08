@@ -1,5 +1,5 @@
 <a href="https://travis-ci.org/iris-contrib/middleware"><img src="https://img.shields.io/travis/iris-contrib/middleware.svg?style=flat-square" alt="Build Status"></a>
-<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/version-v7%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
+<a href="https://github.com/kataras/iris/blob/master/HISTORY.md"><img src="https://img.shields.io/badge/release-v7%20-blue.svg?style=flat-square" alt="CHANGELOG/HISTORY"></a>
 
 
 This repository provides a way to share your [Iris](https://github.com/kataras/iris)' specific middleware with the rest of us. You can view the @kataras supported middleware by pressing [here](https://github.com/kataras/iris/tree/master/middleware).

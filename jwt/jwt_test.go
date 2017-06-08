@@ -12,11 +12,12 @@ package jwt_test
 import (
 	"testing"
 
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/httptest"
+
 	"github.com/dgrijalva/jwt-go"
 	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
-	"gopkg.in/kataras/iris.v6"
-	"gopkg.in/kataras/iris.v6/adaptors/httprouter"
-	"gopkg.in/kataras/iris.v6/httptest"
 )
 
 type Response struct {
@@ -34,9 +35,7 @@ func TestBasicJwt(t *testing.T) {
 		})
 	)
 
-	api.Adapt(httprouter.New())
-
-	securedPingHandler := func(ctx *iris.Context) {
+	securedPingHandler := func(ctx context.Context) {
 		userToken := myJwtMiddleware.Get(ctx)
 		var claimTestedValue string
 		if claims, ok := userToken.Claims.(jwt.MapClaims); ok && userToken.Valid {
@@ -49,7 +48,7 @@ func TestBasicJwt(t *testing.T) {
 		// get the *jwt.Token which contains user information using:
 		// user:= myJwtMiddleware.Get(ctx) or context.Get("jwt").(*jwt.Token)
 
-		ctx.JSON(iris.StatusOK, response)
+		ctx.JSON(response)
 	}
 
 	api.Get("/secured/ping", myJwtMiddleware.Serve, securedPingHandler)
@@ -68,5 +67,4 @@ func TestBasicJwt(t *testing.T) {
 
 	e.GET("/secured/ping").WithHeader("Authorization", "Bearer "+tokenString).
 		Expect().Status(iris.StatusOK).Body().Contains("Iauthenticated").Contains("bar")
-
 }
