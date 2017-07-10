@@ -1,4 +1,4 @@
-// This has been cloned to work with Iris,
+// This has been cloned to work with iris,
 // credits goes to https://github.com/unrolled/secure , I did nothing special here.
 
 package secure
@@ -100,18 +100,16 @@ func (s *Secure) SetBadHostHandler(handler context.Handler) {
 	s.badHostHandler = handler
 }
 
-// Serve implements the context.HandlerFunc for integration with iris.
+// Serve implements the context.Handler for integration with iris.
 func (s *Secure) Serve(ctx context.Context) {
 	// Let secure process the request. If it returns an error,
 	// that indicates the request should not continue.
 	err := s.Process(ctx)
 
-	// If there was an error, do not continue.
-	if err != nil {
-		return
+	// If all ok, continue.
+	if err == nil {
+		ctx.Next()
 	}
-
-	ctx.Next()
 }
 
 // Process runs the actual checks and returns an error if the middleware chain should stop.

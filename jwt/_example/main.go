@@ -1,10 +1,10 @@
-// Iris provides some basic middleware, most for your learning courve.
-// You can use any net/http compatible middleware with iris.ToHandler wrapper.
+// iris provides some basic middleware, most for your learning courve.
+// You can use any net/http compatible middleware with iris.FromStd wrapper.
 //
 // JWT net/http video tutorial for golang newcomers: https://www.youtube.com/watch?v=dgJFeqeXVKw
 //
 // This middleware is the only one cloned from external source: https://github.com/auth0/go-jwt-middleware
-// (because it used "context" to define the user but we don't need that so a simple iris.ToHandler wouldn't work as expected.)
+// (because it used "context" to define the user but we don't need that so a simple iris.FromStd wouldn't work as expected.)
 package main
 
 // $ go get -u github.com/dgrijalva/jwt-go

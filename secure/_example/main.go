@@ -1,26 +1,9 @@
-## Middleware information
-
-More can be found here:
-[https://github.com/unrolled/secure](https://github.com/unrolled/secure)
-
-
-## Description
-
-Secure is an HTTP middleware for Go that facilitates some quick security wins.
-
-## Install
-
-```sh
-$ go get -u github.com/iris-contrib/middleware/secure
-```
-
-## How to use
-
-```go
 package main
 
 import (
-	"gopkg.in/kataras/iris.v6"
+	"github.com/kataras/iris"
+	"github.com/kataras/iris/context"
+
 	"github.com/iris-contrib/middleware/secure"
 )
 
@@ -46,14 +29,11 @@ func main() {
 	})
 
 	app := iris.New()
-	app.Use(s)
+	app.Use(s.Serve)
 
-	app.Get("/home", func(ctx *iris.Context) {
+	app.Get("/home", func(ctx context.Context) {
 		ctx.Writef("Hello from /home")
 	})
 
-	app.Listen(":8080")
+	app.Run(iris.Addr(":8080"))
 }
-
-
-```

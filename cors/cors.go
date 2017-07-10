@@ -30,7 +30,7 @@ func Default() context.Handler {
 }
 
 // WrapNext is the same as New but it is being used to wrap the entire
-// Iris' router, even before the method and path matching,
+// iris' router, even before the method and path matching,
 // i.e: app.WrapRouter(WrapNext(Options{...}))
 func WrapNext(opts Options) func(http.ResponseWriter, *http.Request, http.HandlerFunc) {
 	h := cors.New(cors.Options(opts)).ServeHTTP
