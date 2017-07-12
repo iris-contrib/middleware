@@ -19,6 +19,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [cloudwatch](https://github.com/iris-contrib/middleware/tree/master/cloudwatch) |  AWS cloudwatch metrics middleware. |[cloudwatch/_example](https://github.com/iris-contrib/middleware/tree/master/cloudwatch/_example) |
 | [new relic](https://github.com/iris-contrib/middleware/tree/master/newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent). | [newrelic/_example](https://github.com/iris-contrib/middleware/tree/master/newrelic/_example) |
 | [prometheus](https://github.com/iris-contrib/middleware/tree/master/prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [prometheus/_example](https://github.com/iris-contrib/middleware/tree/master/prometheus/_example) |
+| [casbin](https://github.com/iris-contrib/middleware/tree/master/casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](https://github.com/iris-contrib/middleware/tree/master/casbin/_examples) |
 
 ### How can I register middleware?
 
