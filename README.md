@@ -26,7 +26,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 **To a single route**
 ```go
 app := iris.New()
-app.Get("/mypath", myMiddleware1, myMiddleware2, func(ctx context.Context){}, func(ctx context.Context){}, myMiddleware5,myMainHandlerLast)
+app.Get("/mypath", myMiddleware1, myMiddleware2, func(ctx iris.Context){}, func(ctx iris.Context){}, myMiddleware5,myMainHandlerLast)
 ```
 
 **To a party of routes or subdomain**
@@ -41,18 +41,18 @@ myparty := app.Party("/myparty", myMiddleware1,func(ctx context.Context){},myMid
 
 **To all routes**
 ```go
-app.Use(func(ctx context.Context){}, myMiddleware2)
+app.Use(func(ctx iris.Context){}, myMiddleware2)
 ```
 
 **To global, all routes on all subdomains on all parties**
 ```go
-app.UseGlobal(func(ctx context.Context){}, myMiddleware2)
+app.UseGlobal(func(ctx iris.Context){}, myMiddleware2)
 ```
 
 
 ## Can I use standard net/http handler with iris?
 
-**Yes** you can, just pass the Handler inside the `iris.FromStd` in order to be converted into context.Handler and register it as you saw before.
+**Yes** you can, just pass the Handler inside the `iris.FromStd` in order to be converted into iris.Handler and register it as you saw before.
 
 ### Convert handler which has the form of `http.Handler/HandlerFunc`
 
