@@ -1,0 +1,2 @@
+- id: hi
+  translation: "您好 {{.Name}}"
