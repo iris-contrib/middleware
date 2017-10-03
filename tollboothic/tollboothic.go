@@ -1,9 +1,9 @@
-// Package tollboothic provides rate-limiting logic to iris request handlers.
+// Package tollboothic v2(latest) provides rate-limiting logic to iris request handlers.
 package tollboothic
 
 import (
 	"github.com/didip/tollbooth"
-	"github.com/didip/tollbooth/config"
+	"github.com/didip/tollbooth/limiter"
 	"github.com/kataras/iris/context"
 )
 
@@ -11,9 +11,10 @@ import (
 // rate-limiting given a "limiter" configuration.
 //
 // Read more at: https://github.com/didip/tollbooth
-func LimitHandler(limiter *config.Limiter) context.Handler {
+// And https://github.com/didip/tollbooth_iris
+func LimitHandler(l *limiter.Limiter) context.Handler {
 	return func(ctx context.Context) {
-		httpError := tollbooth.LimitByRequest(limiter, ctx.Request())
+		httpError := tollbooth.LimitByRequest(l, ctx.ResponseWriter(), ctx.Request())
 		if httpError != nil {
 			ctx.StatusCode(httpError.StatusCode)
 			ctx.WriteString(httpError.Message)
