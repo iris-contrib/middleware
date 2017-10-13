@@ -20,16 +20,19 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [new relic](https://github.com/iris-contrib/middleware/tree/master/newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent). | [newrelic/_example](https://github.com/iris-contrib/middleware/tree/master/newrelic/_example) |
 | [prometheus](https://github.com/iris-contrib/middleware/tree/master/prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [prometheus/_example](https://github.com/iris-contrib/middleware/tree/master/prometheus/_example) |
 | [casbin](https://github.com/iris-contrib/middleware/tree/master/casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](https://github.com/iris-contrib/middleware/tree/master/casbin/_examples) |
+| [raven](https://github.com/iris-contrib/middleware/tree/master/raven)| Sentry client in Go | [raven/_example](https://github.com/iris-contrib/middleware/blob/master/raven/_example/main.go) |
 
 ### How can I register middleware?
 
 **To a single route**
+
 ```go
 app := iris.New()
 app.Get("/mypath", myMiddleware1, myMiddleware2, func(ctx iris.Context){}, func(ctx iris.Context){}, myMiddleware5,myMainHandlerLast)
 ```
 
 **To a party of routes or subdomain**
+
 ```go
 
 myparty := app.Party("/myparty", myMiddleware1,func(ctx context.Context){},myMiddleware3)
@@ -40,15 +43,16 @@ myparty := app.Party("/myparty", myMiddleware1,func(ctx context.Context){},myMid
 ```
 
 **To all routes**
+
 ```go
 app.Use(func(ctx iris.Context){}, myMiddleware2)
 ```
 
-**To global, all routes on all subdomains on all parties**
+**To global, all routes, parties and subdomains**
+
 ```go
 app.UseGlobal(func(ctx iris.Context){}, myMiddleware2)
 ```
-
 
 ## Can I use standard net/http handler with iris?
 
@@ -60,21 +64,21 @@ app.UseGlobal(func(ctx iris.Context){}, myMiddleware2)
 package main
 
 import (
-	"github.com/kataras/iris"
+    "github.com/kataras/iris"
 )
 
 func main() {
-	app := iris.New()
+    app := iris.New()
 
-	sillyHTTPHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
-	     println(r.RequestURI)
-	})
+    sillyHTTPHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
+            println(r.RequestURI)
+    })
 
-	sillyConvertedToIon := iris.FromStd(sillyHTTPHandler)
-	// FromStd can take (http.ResponseWriter, *http.Request, next http.Handler) too!
-	app.Use(sillyConvertedToIon)
+    sillyConvertedToIon := iris.FromStd(sillyHTTPHandler)
+    // FromStd can take (http.ResponseWriter, *http.Request, next http.Handler) too!
+    app.Use(sillyConvertedToIon)
 
-	app.Run(iris.Addr(":8080"))
+    app.Run(iris.Addr(":8080"))
 }
 
 ```

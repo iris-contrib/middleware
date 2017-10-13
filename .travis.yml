@@ -3,7 +3,7 @@ os:
   - linux
   - osx
 go:
-  - tip
+  - go1.9
 script:
   - go test -v -cover ./...
 after_script:  
