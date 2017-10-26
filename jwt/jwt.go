@@ -85,12 +85,12 @@ func (m *Middleware) Get(ctx context.Context) *jwt.Token {
 
 // Serve the middleware's action
 func (m *Middleware) Serve(ctx context.Context) {
-	err := m.CheckJWT(ctx)
-
-	// If there was an error, do not call next.
-	if err == nil {
-		ctx.Next()
+	if err := m.CheckJWT(ctx); err != nil {
+		ctx.StopExecution()
+		return
 	}
+	// If everything ok then call next.
+	ctx.Next()
 }
 
 // FromAuthHeader is a "TokenExtractor" that takes a give context and extracts
