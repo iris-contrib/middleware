@@ -96,12 +96,12 @@ func FromHeader(ctx context.Context) (string, error) {
 // then validation passed.
 //
 // Use `New` for middleware use instead.
-func (m *Middleware) SiteVerify(ctx context.Context) (error) {
+func (m *Middleware) SiteVerify(ctx context.Context) error {
 	var response Response
 
 	generatedResponseID, err := FromHeader(ctx)
-	if err != nil {
-		m.Config.ErrorHandler(ctx, err.Error())
+	if err != nil || generatedResponseID == "" {
+		m.Config.ErrorHandler(ctx, "captcha response not found")
 		return fmt.Errorf("generated response is not valid")
 	}
 
