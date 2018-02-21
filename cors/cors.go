@@ -16,6 +16,8 @@ import (
 // AllowMethods field is not working.
 type Options cors.Options
 
+// MakeFallbackHandler make a fallback handler to add to fallback stack (`app.Fallback(h)`)
+//   from handler created by `New()` function or `NewAllowAll()` function.
 func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 	return func(ctx context.Context) {
 		if ctx.Method() != "OPTIONS" {
@@ -35,19 +37,21 @@ func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 	}
 }
 
-// New returns a new cors per-route middleware
-// with the provided options.
-// Unlike the cors wrapper, this middleware can be registered to specific routes,
-// Options.AllowedMethods is missing
+// New returns a new cors per-route handler with the provided options.
+// Unlike the cors wrapper, this handler can be registered to specific routes.
 func New(opts Options) context.Handler {
 	h := handlerconv.FromStdWithNext(WrapNext(opts))
 	return h
 }
 
+// NewAllowAll returns a new cors per-route handler with all permissions.
+// Unlike the cors wrapper, this handler can be registered to specific routes.
 func NewAllowAll() context.Handler {
 	return handlerconv.FromStdWithNext(cors.AllowAll().ServeHTTP)
 }
 
+// NewAppMiddleware create a new cors middleware with the provided options to be registered in Iris Application
+//   by `app.Configure()` function (`iris.Application#Configure`).
 func NewAppMiddleware(opts Options) iris.Configurator {
 	return func(app *iris.Application) {
 		h := New(opts)
@@ -57,6 +61,8 @@ func NewAppMiddleware(opts Options) iris.Configurator {
 	}
 }
 
+// NewPartyMiddleware create a new cors middleware with the provided options to be registered in Iris Party
+//   by `app.Configure()` function (`iris/core/router.Party#ConfigureParty`).
 func NewPartyMiddleware(opts Options) router.PartyConfigurator {
 	return func(party router.Party) {
 		h := New(opts)
@@ -66,6 +72,8 @@ func NewPartyMiddleware(opts Options) router.PartyConfigurator {
 	}
 }
 
+// NewAllowAllAppMiddleware create a new cors middleware with all permissions to be registered in Iris Application
+//   by `app.Configure()` function (`iris.Application#Configure`).
 func NewAllowAllAppMiddleware() iris.Configurator {
 	return func(app *iris.Application) {
 		h := NewAllowAll()
@@ -75,6 +83,8 @@ func NewAllowAllAppMiddleware() iris.Configurator {
 	}
 }
 
+// NewAllowAllPartyMiddleware create a new cors middleware with all permissions to be registered in Iris Party
+//   by `app.Configure()` function (`iris/core/router.Party#ConfigureParty`).
 func NewAllowAllPartyMiddleware() router.PartyConfigurator {
 	return func(party router.Party) {
 		h := NewAllowAll()
@@ -84,7 +94,29 @@ func NewAllowAllPartyMiddleware() router.PartyConfigurator {
 	}
 }
 
-// Default returns a new cors per-route middleware with the default settings:
+// NewDefaultAppMiddleware create a new cors middleware with the default settings to be registered in Iris Application
+//   by `app.Configure()` function (`iris.Application#Configure`).
+func NewDefaultAppMiddleware() iris.Configurator {
+	return func(app *iris.Application) {
+		h := Default()
+
+		app.UseGlobal(h)
+		app.Fallback(MakeFallbackHandler(h))
+	}
+}
+
+// NewDefaultPartyMiddleware create a new cors middleware with the default settings to be registered in Iris Party
+//   by `app.Configure()` function (`iris/core/router.Party#ConfigureParty`).
+func NewDefaultPartyMiddleware() router.PartyConfigurator {
+	return func(party router.Party) {
+		h := Default()
+
+		party.Use(h)
+		party.Fallback(MakeFallbackHandler(h))
+	}
+}
+
+// Default returns a new cors per-route handler with the default settings:
 // allow all origins, allow methods: GET and POST
 func Default() context.Handler {
 	return New(Options{})
