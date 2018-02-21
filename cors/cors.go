@@ -66,7 +66,7 @@ func NewPartyMiddleware(opts Options) router.PartyConfigurator {
 	}
 }
 
-func NewAppAllowAllMiddleware() iris.Configurator {
+func NewAllowAllAppMiddleware() iris.Configurator {
 	return func(app *iris.Application) {
 		h := NewAllowAll()
 
@@ -75,7 +75,7 @@ func NewAppAllowAllMiddleware() iris.Configurator {
 	}
 }
 
-func NewPartyAllowAllMiddleware() router.PartyConfigurator {
+func NewAllowAllPartyMiddleware() router.PartyConfigurator {
 	return func(party router.Party) {
 		h := NewAllowAll()
 
