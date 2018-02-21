@@ -37,15 +37,15 @@ func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 	}
 }
 
-// New returns a new cors per-route handler with the provided options.
-// Unlike the cors wrapper, this handler can be registered to specific routes.
+// New returns a new cors per-route middleware with the provided options.
+// Unlike the cors wrapper, this middleware can be registered to specific routes.
 func New(opts Options) context.Handler {
 	h := handlerconv.FromStdWithNext(WrapNext(opts))
 	return h
 }
 
-// NewAllowAll returns a new cors per-route handler with all permissions.
-// Unlike the cors wrapper, this handler can be registered to specific routes.
+// NewAllowAll returns a new cors per-route middleware with all permissions.
+// Unlike the cors wrapper, this middleware can be registered to specific routes.
 func NewAllowAll() context.Handler {
 	return handlerconv.FromStdWithNext(cors.AllowAll().ServeHTTP)
 }
@@ -116,7 +116,7 @@ func NewDefaultPartyMiddleware() router.PartyConfigurator {
 	}
 }
 
-// Default returns a new cors per-route handler with the default settings:
+// Default returns a new cors per-route middleware with the default settings:
 // allow all origins, allow methods: GET and POST
 func Default() context.Handler {
 	return New(Options{})
