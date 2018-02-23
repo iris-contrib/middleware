@@ -1,5 +1,5 @@
 // This has been cloned to work with iris,
-// credits goes to https://github.com/gorilla/csrf ,
+// credits goes to https://github.com/gorilla/csrf,
 // I did nothing special here except the performance boost becauase of Iris' ecosystem.
 
 package csrf

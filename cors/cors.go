@@ -17,12 +17,11 @@ import (
 type Options cors.Options
 
 // MakeFallbackHandler make a fallback handler to add to fallback stack (`app.Fallback(h)`)
-//   from handler created by `New()` function or `NewAllowAll()` function.
+// from handler created by `New()` function or `NewAllowAll()` function.
 func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 	return func(ctx context.Context) {
 		if ctx.Method() != "OPTIONS" {
-			ctx.Next()
-
+			ctx.NextOrNotFound()
 			return
 		}
 
@@ -31,9 +30,10 @@ func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 
 		if ctx.RouteExists(method, uri) {
 			cors_handler(ctx) // Call the original CORS middleware
-		} else {
-			ctx.Next()
+			return
 		}
+
+		ctx.NextOrNotFound()
 	}
 }
 

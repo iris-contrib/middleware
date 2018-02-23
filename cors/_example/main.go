@@ -10,15 +10,16 @@ import (
 )
 
 func main() {
-
 	app := iris.New()
-	crs := cors.New(cors.Options{
+
+	// `crs := cors.NewAllowAllPartyMiddleware()`, or:
+	crs := cors.NewPartyMiddleware(cors.Options{
 		AllowedOrigins:   []string{"*"}, // allows everything, use that to change the hosts.
 		AllowCredentials: true,
 	})
 
 	v1 := app.Party("/api/v1")
-	v1.Use(crs)
+	v1.ConfigureParty(crs)
 	{
 		v1.Get("/home", func(ctx iris.Context) {
 			ctx.WriteString("Hello from /home")
@@ -28,6 +29,12 @@ func main() {
 		})
 		v1.Post("/send", func(ctx iris.Context) {
 			ctx.WriteString("sent")
+		})
+		v1.Put("/send", func(ctx iris.Context) {
+			ctx.WriteString("updated")
+		})
+		v1.Delete("/send", func(ctx iris.Context) {
+			ctx.WriteString("deleted")
 		})
 	}
 

@@ -54,7 +54,7 @@ func UnsafeSkipCheck(ctx context.Context) {
 //      {{ .csrfField }}
 //
 //      // ... becomes:
-//      <input type="hidden" name="gorilla.csrf.Token" value="<token>">
+//      <input type="hidden" name="csrf.Token" value="<token>">
 //
 func TemplateField(ctx context.Context) template.HTML {
 	if name := ctx.Values().Get(formKey); name != nil {

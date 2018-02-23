@@ -80,7 +80,7 @@ func RequestHeader(header string) Option {
 }
 
 // FieldName allows you to change the name attribute of the hidden <input> field
-// inspected by this package. The default is 'gorilla.csrf.Token'.
+// inspected by this package. The default is 'csrf.Token'.
 func FieldName(name string) Option {
 	return func(cs *Csrf) {
 		cs.opts.FieldName = name
