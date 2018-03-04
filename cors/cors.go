@@ -21,7 +21,7 @@ type Options cors.Options
 func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 	return func(ctx context.Context) {
 		if ctx.Method() != "OPTIONS" {
-			ctx.NextOrNotFound()
+			ctx.Next()
 			return
 		}
 
@@ -33,7 +33,7 @@ func MakeFallbackHandler(cors_handler context.Handler) context.Handler {
 			return
 		}
 
-		ctx.NextOrNotFound()
+		ctx.Next()
 	}
 }
 
