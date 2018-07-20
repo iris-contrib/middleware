@@ -1,11 +1,10 @@
 package prometheus
 
 import (
-	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/kataras/iris/context"
-
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -15,8 +14,8 @@ var (
 )
 
 const (
-	reqsName    = "requests_total"
-	latencyName = "request_duration_milliseconds"
+	reqsName    = "http_requests_total"
+	latencyName = "http_request_duration_seconds"
 )
 
 // Prometheus is a handler that exposes prometheus metrics for the number of requests,
@@ -64,10 +63,11 @@ func (p *Prometheus) ServeHTTP(ctx context.Context) {
 	start := time.Now()
 	ctx.Next()
 	r := ctx.Request()
+	statusCode := strconv.Itoa(ctx.GetStatusCode())
 
-	p.reqs.WithLabelValues(http.StatusText(ctx.GetStatusCode()), r.Method, r.URL.Path).
+	p.reqs.WithLabelValues(statusCode, r.Method, r.URL.Path).
 		Inc()
 
-	p.latency.WithLabelValues(http.StatusText(ctx.GetStatusCode()), r.Method, r.URL.Path).
-		Observe(float64(time.Since(start).Nanoseconds()) / 1000000)
+	p.latency.WithLabelValues(statusCode, r.Method, r.URL.Path).
+		Observe(float64(time.Since(start).Nanoseconds()) / 1000000000)
 }
