@@ -16,7 +16,7 @@ func LimitHandler(l *limiter.Limiter) context.Handler {
 	return func(ctx context.Context) {
 		httpError := tollbooth.LimitByRequest(l, ctx.ResponseWriter(), ctx.Request())
 		if httpError != nil {
-			ctx.Header("content-type", l.GetMessageContentType())
+			ctx.ContentType(l.GetMessageContentType())
 			ctx.StatusCode(httpError.StatusCode)
 			ctx.WriteString(httpError.Message)
 			ctx.StopExecution()
