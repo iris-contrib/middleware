@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	// DefaultBuckets prometheus buckets.
-	DefaultBuckets = []float64{300, 1200, 5000}
+	// DefaultBuckets prometheus buckets in seconds.
+	DefaultBuckets = []float64{0.3, 1.2, 5.0}
 )
 
 const (
