@@ -4,16 +4,14 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kataras/iris"
-
 	prometheusMiddleware "github.com/iris-contrib/middleware/prometheus"
-
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/kataras/iris"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
 	app := iris.New()
-	m := prometheusMiddleware.New("serviceName", 300, 1200, 5000)
+	m := prometheusMiddleware.New("serviceName", 0.3, 1.2, 5.0)
 
 	app.Use(m.ServeHTTP)
 
@@ -31,7 +29,7 @@ func main() {
 		ctx.Writef("Slept for %d milliseconds", sleep)
 	})
 
-	app.Get("/metrics", iris.FromStd(prometheus.Handler()))
+	app.Get("/metrics", iris.FromStd(promhttp.Handler()))
 
 	// http://localhost:8080/
 	// http://localhost:8080/anotfound
