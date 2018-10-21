@@ -1,4 +1,10 @@
-package permissions
+/*
+// Doesn't work and can't be fixed within our repository
+// because of upstream author of permissionbolt wrong use of its vendor folder:
+// permissionbolt\permissionbolt.go:22:2: cannot use perm (type *permissionbolt.Permissions) as type "github.com/xyproto/pinterface".IPermissions in return argument:
+//         *permissionbolt.Permissions does not implement "github.com/xyproto/pinterface".IPermissions (wrong type for UserState method)
+//                 have UserState() "github.com/xyproto/permissionbolt/vendor/github.com/xyproto/pinterface".IUserState
+// 				want UserState() "github.com/xyproto/pinterface".IUserState
 
 import (
 	"github.com/kataras/iris/context"
@@ -32,3 +38,5 @@ func New(filename string) (pinterface.IPermissions, context.Handler, error) {
 		ctx.Next()
 	}, nil
 }
+*/
+package permissions

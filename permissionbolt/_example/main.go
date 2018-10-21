@@ -1,5 +1,12 @@
 package main
 
+func main() {
+
+}
+
+/*
+See ../permissionbolt.go comments for why this is commented.
+
 import (
 	"fmt"
 	"log"
@@ -93,3 +100,4 @@ func main() {
 	// Serve
 	app.Run(iris.Addr(":3000"))
 }
+*/
