@@ -29,7 +29,7 @@ type Prometheus struct {
 
 // New returns a new prometheus middleware.
 //
-// If buckets are empty then `DefaultBuckets` are setted.
+// If buckets are empty then `DefaultBuckets` are set.
 func New(name string, buckets ...float64) *Prometheus {
 	p := Prometheus{}
 	p.reqs = prometheus.NewCounterVec(
