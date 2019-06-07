@@ -10,9 +10,10 @@ $ go get github.com/iris-contrib/middleware/...
 
 Middleware is just a chain handlers which can be executed before or after the main handler, can transfer data between handlers and communicate with third-party libraries, they are just functions.
 
+<!-- | [permissionbolt](https://github.com/iris-contrib/middleware/tree/master/permissionbolt) | Middleware for keeping track of users, login states and permissions. | [permissionbolt/_example/main.go]( permissionbolt/_example/main.go) | -->
+
 | Middleware | Description | Example |
 | -----------|--------|-------------|
-<!-- | [permissionbolt](https://github.com/iris-contrib/middleware/tree/master/permissionbolt) | Middleware for keeping track of users, login states and permissions. | [permissionbolt/_example/main.go]( permissionbolt/_example/main.go) | -->
 | [jwt](https://github.com/iris-contrib/middleware/tree/master/jwt) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it. | [jwt/_example](https://github.com/iris-contrib/middleware/tree/master/jwt/_example) |
 | [cors](https://github.com/iris-contrib/middleware/tree/master/cors) | HTTP Access Control. | [cors/_example](https://github.com/iris-contrib/middleware/tree/master/cors/_example) |
 | [secure](https://github.com/iris-contrib/middleware/tree/master/secure) | Middleware that implements a few quick security wins. | [secure/_example](https://github.com/iris-contrib/middleware/tree/master/secure/_example/main.go) |
