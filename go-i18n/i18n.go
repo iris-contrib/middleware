@@ -4,7 +4,9 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/context"
-	"github.com/nicksnyder/go-i18n/i18n/bundle"
+
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"golang.org/x/text/language"
 )
 
 // I18n the struct
@@ -20,14 +22,14 @@ type I18n struct {
 	// Bundle of i18n
 	//
 	// Checked: Configuration state, not at runtime
-	Bundle *bundle.Bundle
+	Bundle *i18n.Bundle
 }
 
 //New returns a new i18n middleware and load locale files by given args
 func New(locales ...string) *I18n {
-	b := bundle.New()
+	b := i18n.NewBundle(language.English)
 	for _, loc := range locales {
-		b.MustLoadTranslationFile(loc)
+		b.MustLoadMessageFile(loc)
 	}
 
 	return &I18n{
@@ -61,7 +63,7 @@ func (i *I18n) Serve(ctx context.Context) {
 						lc := strings.Split(langEntry, ";")[0]
 						for _, tag := range i.Bundle.LanguageTags() {
 							code := strings.Split(lc, "-")[0]
-							if strings.Contains(tag, code) {
+							if strings.Contains(tag.String(), code) {
 								language = lc
 								break
 							}
@@ -76,16 +78,24 @@ func (i *I18n) Serve(ctx context.Context) {
 		}
 	}
 
-	tr, err := i.Bundle.Tfunc(language, i.Default)
-	if err != nil {
-		panic(err)
-	}
+	localizer := i18n.NewLocalizer(i.Bundle, language)
 
 	ctx.Values().Set(langKey, language)
 	translateFuncKey := ctx.Application().ConfigurationReadOnly().GetTranslateFunctionContextKey()
 	//wrap tr to raw func for ctx.Translate usage
 	ctx.Values().Set(translateFuncKey, func(translationID string, args ...interface{}) string {
-		return tr(translationID, args...)
+		desc := ""
+		if len(args) > 0 {
+			if v, ok := args[0].(string); ok {
+				desc = v
+			}
+		}
+
+		translated, err := localizer.LocalizeMessage(&i18n.Message{ID: translationID, Description: desc})
+		if err != nil {
+			return err.Error()
+		}
+		return translated
 	})
 
 	ctx.Next()
