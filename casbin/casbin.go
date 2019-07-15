@@ -5,7 +5,7 @@ import (
 
 	"github.com/kataras/iris/context"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin"
 )
 
 /*
