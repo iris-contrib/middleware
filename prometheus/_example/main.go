@@ -4,8 +4,9 @@ import (
 	"math/rand"
 	"time"
 
-	prometheusMiddleware "github.com/iris-contrib/middleware/prometheus"
 	"github.com/kataras/iris"
+
+	prometheusMiddleware "github.com/iris-contrib/middleware/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 

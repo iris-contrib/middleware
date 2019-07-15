@@ -79,7 +79,7 @@ type options struct {
 }
 
 // New returns a new csrf middleware. It contains both `Get/Head/Options/Trace` and 'Unsafe' methods (i.e `Post`)
-// handlers for proccessing.
+// handlers for processing.
 func New(authKey []byte, opts ...Option) *Csrf {
 	cs := parseOptions(opts...)
 

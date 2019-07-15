@@ -8,6 +8,11 @@ import (
 	"github.com/casbin/casbin"
 )
 
+/*
+	Updated for the casbin 2.x released 3 days ago.
+	2019-07-15
+*/
+
 // New returns the auth service which receives a casbin enforcer.
 //
 // Adapt with its `Wrapper` for the entire application
@@ -40,7 +45,7 @@ func (c *Casbin) Wrapper() func(w http.ResponseWriter, r *http.Request, router h
 // [...]
 func (c *Casbin) ServeHTTP(ctx context.Context) {
 	if !c.Check(ctx.Request()) {
-		ctx.StatusCode(http.StatusForbidden) // Status Forbiden
+		ctx.StatusCode(http.StatusForbidden) // Status Forbidden
 		ctx.StopExecution()
 		return
 	}
@@ -58,7 +63,8 @@ func (c *Casbin) Check(r *http.Request) bool {
 	username := Username(r)
 	method := r.Method
 	path := r.URL.Path
-	return c.enforcer.Enforce(username, path, method)
+	ok, _ := c.enforcer.Enforce(username, path, method)
+	return ok
 }
 
 // Username gets the username from the basicauth.

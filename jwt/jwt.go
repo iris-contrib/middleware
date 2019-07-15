@@ -8,9 +8,10 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 
+	"time"
+
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/context"
-	"time"
 )
 
 // iris provides some basic middleware, most for your learning courve.
