@@ -4,6 +4,10 @@ os:
   - osx
 go:
   - go1.12.x
+env:
+ global:
+   - GOCACHE=off
+   - GO111MODULE=on
 script:
   - go get ./...
   - go test -v -cover ./...
