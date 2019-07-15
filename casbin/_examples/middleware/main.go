@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/casbin/casbin"
+	"github.com/casbin/casbin/v2"
 	cm "github.com/iris-contrib/middleware/casbin"
 )
 
@@ -11,7 +11,7 @@ import (
 // $ go run main.go
 
 // Enforcer maps the model and the policy for the casbin service, we use this variable on the main_test too.
-var Enforcer = casbin.NewEnforcer("casbinmodel.conf", "casbinpolicy.csv")
+var Enforcer, _ = casbin.NewEnforcer("casbinmodel.conf", "casbinpolicy.csv")
 
 func newApp() *iris.Application {
 	casbinMiddleware := cm.New(Enforcer)
