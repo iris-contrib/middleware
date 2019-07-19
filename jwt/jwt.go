@@ -14,19 +14,25 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-// iris provides some basic middleware, most for your learning courve.
-// You can use any net/http compatible middleware with iris.FromStd wrapper.
+// Token for JWT. Different fields will be used depending on whether you're
+// creating or parsing/verifying a token.
 //
-// JWT net/http video tutorial for golang newcomers: https://www.youtube.com/watch?v=dgJFeqeXVKw
-//
-// Unlike the other middleware, this middleware was cloned from external source: https://github.com/auth0/go-jwt-middleware
-// (because it used "context" to define the user but we don't need that so a simple iris.FromStd wouldn't work as expected.)
-// jwt_test.go also didn't created by me:
-// 28 Jul 2016
-// @heralight heralight add jwt unit test.
-//
-// So if this doesn't works for you just try other net/http compatible middleware and bind it via `iris.FromStd(myHandlerWithNext)`,
-// It's here for your learning curve.
+// A type alias for jwt.Token.
+type Token = jwt.Token
+
+// HS256 and company.
+var (
+	SigningMethodHS256 = jwt.SigningMethodHS256
+	SigningMethodHS384 = jwt.SigningMethodHS384
+	SigningMethodHS512 = jwt.SigningMethodHS512
+)
+
+// ECDSA - EC256 and company.
+var (
+	SigningMethodES256 = jwt.SigningMethodES256
+	SigningMethodES384 = jwt.SigningMethodES384
+	SigningMethodES512 = jwt.SigningMethodES512
+)
 
 // A function called whenever an error is encountered
 type errorHandler func(context.Context, string)
