@@ -13,8 +13,7 @@ package main
 import (
 	"github.com/kataras/iris"
 
-	"github.com/dgrijalva/jwt-go"
-	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
+	jwt "github.com/iris-contrib/middleware/jwt"
 )
 
 func myHandler(ctx iris.Context) {
@@ -29,7 +28,7 @@ func myHandler(ctx iris.Context) {
 func main() {
 	app := iris.New()
 
-	jwtHandler := jwtmiddleware.New(jwtmiddleware.Config{
+	j := jwt.New(jwt.Config{
 		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 			return []byte("My Secret"), nil
 		},
@@ -39,7 +38,8 @@ func main() {
 		SigningMethod: jwt.SigningMethodHS256,
 	})
 
-	app.Use(jwtHandler.Serve)
+	app.Use(j.Serve)
+	// j.CheckJWT(Context) error can be also used inside handlers.
 
 	app.Get("/ping", myHandler)
 	app.Run(iris.Addr("localhost:3001"))
