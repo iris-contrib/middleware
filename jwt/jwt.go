@@ -213,6 +213,8 @@ func (m *Middleware) CheckJWT(ctx context.Context) error {
 	if m.Config.Expiration {
 		if claims, ok := parsedToken.Claims.(jwt.MapClaims); ok {
 			if expired := claims.VerifyExpiresAt(time.Now().Unix(), true); !expired {
+				m.logf("Token is expired")
+				m.Config.ErrorHandler(ctx, "The token is expired")
 				return fmt.Errorf("Token is expired")
 			}
 		}
