@@ -13,11 +13,24 @@ import (
 	"github.com/kataras/iris/context"
 )
 
-// Token for JWT. Different fields will be used depending on whether you're
-// creating or parsing/verifying a token.
-//
-// A type alias for jwt.Token.
-type Token = jwt.Token
+type (
+	// Token for JWT. Different fields will be used depending on whether you're
+	// creating or parsing/verifying a token.
+	//
+	// A type alias for jwt.Token.
+	Token = jwt.Token
+	// MapClaims type that uses the map[string]interface{} for JSON decoding
+	// This is the default claims type if you don't supply one
+	//
+	// A type alias for jwt.MapClaims.
+	MapClaims = jwt.MapClaims
+)
+
+// Shortcuts to create a new Token.
+var (
+	NewToken           = jwt.New
+	NewTokenWithClaims = jwt.NewWithClaims
+)
 
 // HS256 and company.
 var (

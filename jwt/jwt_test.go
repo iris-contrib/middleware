@@ -16,8 +16,7 @@ import (
 	"github.com/kataras/iris/context"
 	"github.com/kataras/iris/httptest"
 
-	"github.com/dgrijalva/jwt-go"
-	jwtmiddleware "github.com/iris-contrib/middleware/jwt"
+	"github.com/iris-contrib/middleware/jwt"
 )
 
 type Response struct {
@@ -26,8 +25,8 @@ type Response struct {
 
 func TestBasicJwt(t *testing.T) {
 	var (
-		app             = iris.New()
-		myJwtMiddleware = jwtmiddleware.New(jwtmiddleware.Config{
+		app = iris.New()
+		j   = jwt.New(jwt.Config{
 			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 				return []byte("My Secret"), nil
 			},
@@ -36,7 +35,7 @@ func TestBasicJwt(t *testing.T) {
 	)
 
 	securedPingHandler := func(ctx context.Context) {
-		userToken := myJwtMiddleware.Get(ctx)
+		userToken := j.Get(ctx)
 		var claimTestedValue string
 		if claims, ok := userToken.Claims.(jwt.MapClaims); ok && userToken.Valid {
 			claimTestedValue = claims["foo"].(string)
@@ -46,19 +45,19 @@ func TestBasicJwt(t *testing.T) {
 
 		response := Response{"Iauthenticated" + claimTestedValue}
 		// get the *jwt.Token which contains user information using:
-		// user:= myJwtMiddleware.Get(ctx) or context.Get("jwt").(*jwt.Token)
+		// user:= j.Get(ctx) or ctx.Values().Get("jwt").(*jwt.Token)
 
 		ctx.JSON(response)
 	}
 
-	app.Get("/secured/ping", myJwtMiddleware.Serve, securedPingHandler)
+	app.Get("/secured/ping", j.Serve, securedPingHandler)
 	e := httptest.New(t, app)
 
 	e.GET("/secured/ping").Expect().Status(iris.StatusUnauthorized)
 
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	token := jwt.NewTokenWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"foo": "bar",
 	})
 
