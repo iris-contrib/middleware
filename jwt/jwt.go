@@ -24,6 +24,11 @@ type (
 	//
 	// A type alias for jwt.MapClaims.
 	MapClaims = jwt.MapClaims
+	// Claims must just have a Valid method that determines
+	// if the token is invalid for any supported reason.
+	//
+	// A type alias for jwt.Claims.
+	Claims = jwt.Claims
 )
 
 // Shortcuts to create a new Token.
