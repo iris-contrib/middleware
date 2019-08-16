@@ -3,11 +3,10 @@ os:
   - linux
   - osx
 go:
-  - tip
+  - go1.12.x
 env:
  global:
    - GO111MODULE=on
 script:
-  - go get github.com/kataras/iris@master
   - go get ./...
   - go test -v -cover ./...
