@@ -3,7 +3,6 @@ package main
 import (
 	"testing"
 
-	"github.com/iris-contrib/httpexpect"
 	"github.com/kataras/iris/httptest"
 )
 
@@ -75,6 +74,6 @@ func TestCasbinWrapper(t *testing.T) {
 
 }
 
-func check(e *httpexpect.Expect, method, path, username string, status int) {
+func check(e *httptest.Expect, method, path, username string, status int) {
 	e.Request(method, path).WithBasicAuth(username, "password").Expect().Status(status)
 }
