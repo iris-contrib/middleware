@@ -44,7 +44,7 @@ func main() {
 		// Extract by the "token" url.
 		// There are plenty of options.
 		// The default jwt's behavior to extract a token value is by
-		// the `Authentication: Bearer $TOKEN` header.
+		// the `Authorization: Bearer $TOKEN` header.
 		Extractor: jwt.FromParameter("token"),
 		// When set, the middleware verifies that tokens are
 		// signed with the specific signing algorithm
