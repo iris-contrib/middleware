@@ -1,14 +1,24 @@
 This repository provides a way to share any minor handlers for [iris](https://github.com/kataras/iris) web framework. You can view the built'n supported handlers by pressing [here](https://github.com/kataras/iris/tree/v12/middleware).
 
-[![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=v12&style=flat-square)](https://travis-ci.org/iris-contrib/middleware)
+<!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=v12&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
 
 ## Installation
 
 Install a middleware, take for example the [cors](cors) one.
 
 ```sh
-$ go get github.com/iris-contrib/middleware/cors/v12@v12.0.0
+$ go get github.com/iris-contrib/middleware/cors
 ```
+
+**import as**
+
+```go
+import "github.com/iris-contrib/middleware/cors"
+
+// [...]
+```
+
+> go build
 
 Middleware is just a chain handlers which can be executed before or after the main handler, can transfer data between handlers and communicate with third-party libraries, they are just functions.
 
