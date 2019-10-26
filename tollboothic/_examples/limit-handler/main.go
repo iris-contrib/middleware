@@ -4,7 +4,7 @@ import (
 	"github.com/kataras/iris/v12"
 
 	"github.com/didip/tollbooth"
-	"github.com/iris-contrib/middleware/tollboothic/v12"
+	"github.com/iris-contrib/middleware/tollboothic"
 )
 
 // $ go get github.com/didip/tollbooth

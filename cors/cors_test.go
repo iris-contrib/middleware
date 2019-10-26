@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iris-contrib/middleware/cors/v12"
+	"github.com/iris-contrib/middleware/cors"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/httptest"

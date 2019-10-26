@@ -16,7 +16,7 @@ import (
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/httptest"
 
-	"github.com/iris-contrib/middleware/jwt/v12"
+	"github.com/iris-contrib/middleware/jwt"
 )
 
 type Response struct {

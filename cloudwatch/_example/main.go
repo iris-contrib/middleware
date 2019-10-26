@@ -7,7 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
-	cw "github.com/iris-contrib/middleware/cloudwatch/v12"
+	cw "github.com/iris-contrib/middleware/cloudwatch"
 )
 
 // $ go get github.com/aws/aws-sdk-go/...

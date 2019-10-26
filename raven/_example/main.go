@@ -5,8 +5,8 @@ import (
 
 	// $ go get github.com/getsentry/raven-go
 	"github.com/getsentry/raven-go"
-	// $ go get github.com/iris-contrib/middleware/raven/v12@v12.0.0
-	ravenIris "github.com/iris-contrib/middleware/raven/v12"
+	// $ go get github.com/iris-contrib/middleware/raven
+	ravenIris "github.com/iris-contrib/middleware/raven"
 )
 
 // https://docs.sentry.io/clients/go/integrations/http/

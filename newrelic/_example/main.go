@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/kataras/iris/v12"
 
-	"github.com/iris-contrib/middleware/newrelic/v12"
+	"github.com/iris-contrib/middleware/newrelic"
 )
 
 func main() {
