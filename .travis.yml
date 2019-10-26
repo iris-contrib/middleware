@@ -3,7 +3,7 @@ os:
   - linux
   - osx
 go:
-  - go1.12.x
+  - go1.13.x
 env:
  global:
    - GO111MODULE=on

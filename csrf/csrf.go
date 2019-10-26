@@ -5,11 +5,11 @@
 package csrf
 
 import (
+	"errors"
 	"net/url"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/core/errors"
 
 	"github.com/gorilla/securecookie"
 )
