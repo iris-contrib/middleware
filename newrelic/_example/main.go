@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
-	"github.com/iris-contrib/middleware/newrelic"
+	"github.com/iris-contrib/middleware/newrelic/v12"
 )
 
 func main() {

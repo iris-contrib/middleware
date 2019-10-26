@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
 	// $ go get github.com/getsentry/raven-go
 	"github.com/getsentry/raven-go"
-	// $ go get github.com/iris-contrib/middleware/...
-	ravenIris "github.com/iris-contrib/middleware/raven"
+	// $ go get github.com/iris-contrib/middleware/raven/v12@v12.0.0
+	ravenIris "github.com/iris-contrib/middleware/raven/v12"
 )
 
 // https://docs.sentry.io/clients/go/integrations/http/

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 
-	"github.com/iris-contrib/middleware/jwt"
+	"github.com/iris-contrib/middleware/jwt/v12"
 )
 
 var mySecret = []byte("My Secret")

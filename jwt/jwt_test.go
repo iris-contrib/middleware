@@ -12,11 +12,11 @@ package jwt_test
 import (
 	"testing"
 
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/context"
-	"github.com/kataras/iris/httptest"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/httptest"
 
-	"github.com/iris-contrib/middleware/jwt"
+	"github.com/iris-contrib/middleware/jwt/v12"
 )
 
 type Response struct {

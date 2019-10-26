@@ -1,8 +1,9 @@
 package main
 
 import (
-	i18n "github.com/iris-contrib/middleware/go-i18n"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
+
+	i18n "github.com/iris-contrib/middleware/go-i18n/v12"
 )
 
 type User struct {

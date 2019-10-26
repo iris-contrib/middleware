@@ -7,7 +7,7 @@
 // 				want UserState() "github.com/xyproto/pinterface".IUserState
 
 import (
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 	"github.com/xyproto/permissionbolt"
 	"github.com/xyproto/pinterface"
 )

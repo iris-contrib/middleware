@@ -3,7 +3,7 @@ package i18n
 import (
 	"strings"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"

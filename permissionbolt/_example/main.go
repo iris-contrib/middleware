@@ -14,7 +14,7 @@ import (
 	"strings"
 
 	"github.com/iris-contrib/middleware/permissionbolt"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 )
 
 func main() {

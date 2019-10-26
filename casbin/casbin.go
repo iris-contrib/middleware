@@ -3,7 +3,7 @@ package casbin
 import (
 	"net/http"
 
-	"github.com/kataras/iris/context"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/casbin/casbin/v2"
 )
