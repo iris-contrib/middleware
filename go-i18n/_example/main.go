@@ -29,12 +29,12 @@ func main() {
 		// it tries to find from the URLParameter set on the configuration
 		// if not found then
 		// it tries to find the language by the "language" cookie
-		// if didn't found then it it set to the Default set on the configuration
+		// else the Default set on the configuration is used instead.
 
 		// hi is the key, 'iris' is the %s on the .ini file
 		// the second parameter is optional
 
-		// hi := ctx.Translate("hi", context.Map{
+		// hi := ctx.Translate("hi", iris.Map{
 		// 	"Name": "Peter",
 		// })
 		hi := ctx.Translate("hi", &User{
@@ -52,6 +52,6 @@ func main() {
 	// go to http://localhost:8080/?lang=el-GR
 	// or http://localhost:8080
 	// or http://localhost:8080/?lang=zh-CN
-	app.Run(iris.Addr(":8080"), iris.WithoutVersionChecker)
+	app.Run(iris.Addr(":8080"))
 
 }
