@@ -1,4 +1,4 @@
-package jwt_test
+package jwt
 
 // Unlike the other middleware, this middleware was cloned from external source: https://github.com/auth0/go-jwt-middleware
 // (because it used "context" to define the user but we don't need that so a simple iris.FromStd wouldn't work as expected.)
@@ -15,8 +15,6 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/httptest"
-
-	"github.com/iris-contrib/middleware/jwt"
 )
 
 type Response struct {
@@ -26,26 +24,26 @@ type Response struct {
 func TestBasicJwt(t *testing.T) {
 	var (
 		app = iris.New()
-		j   = jwt.New(jwt.Config{
-			ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+		j   = New(Config{
+			ValidationKeyGetter: func(token *Token) (interface{}, error) {
 				return []byte("My Secret"), nil
 			},
-			SigningMethod: jwt.SigningMethodHS256,
+			SigningMethod: SigningMethodHS256,
 		})
 	)
 
 	securedPingHandler := func(ctx context.Context) {
 		userToken := j.Get(ctx)
 		var claimTestedValue string
-		if claims, ok := userToken.Claims.(jwt.MapClaims); ok && userToken.Valid {
+		if claims, ok := userToken.Claims.(MapClaims); ok && userToken.Valid {
 			claimTestedValue = claims["foo"].(string)
 		} else {
 			claimTestedValue = "Claims Failed"
 		}
 
 		response := Response{"Iauthenticated" + claimTestedValue}
-		// get the *jwt.Token which contains user information using:
-		// user:= j.Get(ctx) or ctx.Values().Get("jwt").(*jwt.Token)
+		// get the *Token which contains user information using:
+		// user:= j.Get(ctx) or ctx.Values().Get("jwt").(*Token)
 
 		ctx.JSON(response)
 	}
@@ -57,7 +55,7 @@ func TestBasicJwt(t *testing.T) {
 
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
-	token := jwt.NewTokenWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+	token := NewTokenWithClaims(SigningMethodHS256, MapClaims{
 		"foo": "bar",
 	})
 
