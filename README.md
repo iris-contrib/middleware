@@ -1,19 +1,19 @@
-This repository provides a way to share any minor handlers for [iris](https://github.com/kataras/iris) web framework. You can view the built'n supported handlers by pressing [here](https://github.com/kataras/iris/tree/v12/middleware).
+This repository provides a way to share any minor handlers for [Iris v12.2.0+](https://github.com/kataras/iris) web framework. You can view the built'n supported handlers by pressing [here](https://github.com/kataras/iris/tree/v12/middleware).
 
 <!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=v12&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
 
 ## Installation
 
-Install a middleware, take for example the [cors](cors) one.
+Install a middleware, take for example the [jwt](jwt) one.
 
 ```sh
-$ go get github.com/iris-contrib/middleware/cors
+$ go get github.com/iris-contrib/middleware/jwt
 ```
 
 **import as**
 
 ```go
-import "github.com/iris-contrib/middleware/cors"
+import "github.com/iris-contrib/middleware/jwt"
 
 // [...]
 ```
@@ -36,13 +36,23 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [casbin](casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](casbin/_examples) |
 | [raven](raven)| Sentry client in Go | [raven/_example](https://github.com/iris-contrib/middleware/blob/v12/raven/_example/main.go) |
 | [csrf](csrf)| Cross-Site Request Forgery Protection | [csrf/_example](https://github.com/iris-contrib/middleware/blob/v12/csrf/_example/main.go) |
+| [throttler](throttler)| rate limiting access to HTTP endpoints. | [throttler/_example](https://github.com/iris-contrib/middleware/blob/v12/throttler/_example/main.go) |
+
 ### How can I register middleware?
 
 **To a single route**
 
 ```go
 app := iris.New()
-app.Get("/mypath", myMiddleware1, myMiddleware2, func(ctx iris.Context){}, func(ctx iris.Context){}, myMiddleware5,myMainHandlerLast)
+app.Get("/mypath",
+  onBegin,
+  mySecondMiddleware,
+  mainHandler,
+)
+
+func onBegin(ctx iris.Context) { /* ... */ ctx.Next() }
+func mySecondMiddleware(ctx iris.Context) { /* ... */ ctx.Next() }
+func mainHandler(ctx iris.Context) { /* ... */ }
 ```
 
 **To a party of routes or subdomain**
@@ -63,13 +73,13 @@ p.Use(logMiddleware)
 **To all routes**
 
 ```go
-app.Use(func(ctx iris.Context){}, myMiddleware2)
+app.Use(func(ctx iris.Context) { }, myMiddleware2)
 ```
 
 **To global, all routes, parties and subdomains**
 
 ```go
-app.UseGlobal(func(ctx iris.Context){}, myMiddleware2)
+app.UseGlobal(func(ctx iris.Context) { }, myMiddleware2)
 ```
 
 ## Can I use standard net/http handler with iris?
@@ -96,7 +106,7 @@ func main() {
     // FromStd can take (http.ResponseWriter, *http.Request, next http.Handler) too!
     app.Use(sillyConvertedToIon)
 
-    app.Run(iris.Addr(":8080"))
+    app.Listen(":8080")
 }
 
 ```

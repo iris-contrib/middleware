@@ -98,6 +98,6 @@ func main() {
 	})
 
 	// Serve
-	app.Run(iris.Addr(":3000"))
+	app.Listen(":3000")
 }
 */

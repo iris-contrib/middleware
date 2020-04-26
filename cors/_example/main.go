@@ -33,5 +33,5 @@ func main() {
 		})
 	}
 
-	app.Run(iris.Addr("localhost:8080"))
+	app.Listen(":8080")
 }

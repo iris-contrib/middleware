@@ -28,5 +28,5 @@ func main() {
 	// http://localhost:8080/?lang=zh-CN
 	// http://localhost:8080/en
 	// http://localhost:8080/zh
-	app.Run(iris.Addr(":8080"))
+	app.Listen(":8080")
 }
