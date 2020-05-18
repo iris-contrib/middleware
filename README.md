@@ -22,7 +22,7 @@ import "github.com/iris-contrib/middleware/jwt"
 
 Middleware is just a chain handlers which can be executed before or after the main handler, can transfer data between handlers and communicate with third-party libraries, they are just functions.
 
-<!-- | [permissionbolt](permissionbolt) | Middleware for keeping track of users, login states and permissions. | [permissionbolt/_example/main.go]( permissionbolt/_example/main.go) | -->
+<!-- https://github.com/kataras/iris/blob/master/_examples/permissions/main.go -->
 
 | Middleware | Description | Example |
 | -----------|--------|-------------|

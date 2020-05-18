@@ -110,7 +110,11 @@ func logf(ctx iris.Context, format string, args ...interface{}) {
 
 // Get returns the user (&token) information for this client/request
 func (m *Middleware) Get(ctx context.Context) *jwt.Token {
-	return ctx.Values().Get(m.Config.ContextKey).(*jwt.Token)
+	v := ctx.Values().Get(m.Config.ContextKey)
+	if v == nil {
+		return nil
+	}
+	return v.(*jwt.Token)
 }
 
 // Serve the middleware's action
