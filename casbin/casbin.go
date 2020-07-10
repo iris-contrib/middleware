@@ -3,7 +3,7 @@ package casbin
 import (
 	"net/http"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 
 	"github.com/casbin/casbin/v2"
 )
@@ -43,7 +43,7 @@ func (c *Casbin) Wrapper() func(w http.ResponseWriter, r *http.Request, router h
 // [...]
 // app.Get("/dataset1/resource1", casbinMiddleware.ServeHTTP, myHandler)
 // [...]
-func (c *Casbin) ServeHTTP(ctx context.Context) {
+func (c *Casbin) ServeHTTP(ctx iris.Context) {
 	if !c.Check(ctx.Request()) {
 		ctx.StatusCode(http.StatusForbidden) // Status Forbidden
 		ctx.StopExecution()

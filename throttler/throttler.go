@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 
 	"github.com/throttled/throttled"
 )
@@ -15,13 +15,13 @@ var (
 	// DefaultDeniedHandler is the default DeniedHandler for an
 	// RateLimiter. It returns a 429 status code with a generic
 	// message.
-	DefaultDeniedHandler = func(ctx context.Context) {
+	DefaultDeniedHandler = func(ctx iris.Context) {
 		ctx.StopWithText(http.StatusTooManyRequests, "limit exceeded")
 	}
 
 	// DefaultError is the default Error function for an RateLimiter.
 	// It returns a 500 status code with a generic message.
-	DefaultError = func(ctx context.Context, err error) {
+	DefaultError = func(ctx iris.Context, err error) {
 		ctx.StopWithError(http.StatusInternalServerError, err)
 	}
 )
@@ -30,11 +30,11 @@ var (
 type RateLimiter struct {
 	// DeniedHandler is called if the request is disallowed. If it is
 	// nil, the DefaultDeniedHandler variable is used.
-	DeniedHandler context.Handler
+	DeniedHandler iris.Handler
 
 	// Error is called if the RateLimiter returns an error. If it is
 	// nil, the DefaultErrorFunc is used.
-	Error func(ctx context.Context, err error)
+	Error func(ctx iris.Context, err error)
 
 	// Limiter is call for each request to determine whether the
 	// request is permitted and update internal state. It must be set.
@@ -53,7 +53,7 @@ type RateLimiter struct {
 // X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and
 // Retry-After headers will be written to the response based on the
 // values in the RateLimitResult.
-func (t *RateLimiter) RateLimit(ctx context.Context) {
+func (t *RateLimiter) RateLimit(ctx iris.Context) {
 	if t.RateLimiter == nil {
 		t.error(ctx, errors.New("You must set a RateLimiter on RateLimiter"))
 	}
@@ -83,7 +83,7 @@ func (t *RateLimiter) RateLimit(ctx context.Context) {
 	ctx.Next()
 }
 
-func (t *RateLimiter) error(ctx context.Context, err error) {
+func (t *RateLimiter) error(ctx iris.Context, err error) {
 	e := t.Error
 	if e == nil {
 		e = DefaultError
@@ -91,7 +91,7 @@ func (t *RateLimiter) error(ctx context.Context, err error) {
 	e(ctx, err)
 }
 
-func setRateLimitHeaders(ctx context.Context, context throttled.RateLimitResult) {
+func setRateLimitHeaders(ctx iris.Context, context throttled.RateLimitResult) {
 	if v := context.Limit; v >= 0 {
 		ctx.Header("X-RateLimit-Limit", strconv.Itoa(v))
 	}

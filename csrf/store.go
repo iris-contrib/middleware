@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 
 	"github.com/gorilla/securecookie"
 )
@@ -13,13 +13,13 @@ import (
 // store represents the session storage used for CSRF tokens.
 type store interface {
 	// Get returns the real CSRF token from the store.
-	Get(context.Context) ([]byte, error)
+	Get(iris.Context) ([]byte, error)
 	// Save stores the real CSRF token in the store and writes a
 	// cookie to the Context's http.ResponseWriter.
 	// For non-cookie stores, the cookie should contain a unique (256 bit) ID
 	// or key that references the token in the backend store.
 	// csrf.GenerateRandomBytes is a helper function for generating secure IDs.
-	Save(ctx context.Context, token []byte) error
+	Save(ctx iris.Context, token []byte) error
 }
 
 // cookieStore is a signed cookie session store for CSRF tokens.
@@ -35,7 +35,7 @@ type cookieStore struct {
 
 // Get retrieves a CSRF token from the session cookie. It returns an empty token
 // if decoding fails (e.g. HMAC validation fails or the named cookie doesn't exist).
-func (cs *cookieStore) Get(ctx context.Context) ([]byte, error) {
+func (cs *cookieStore) Get(ctx iris.Context) ([]byte, error) {
 	// Retrieve the cookie from the request
 	cookieValue := ctx.GetCookie(cs.name)
 	if cookieValue == "" {
@@ -53,7 +53,7 @@ func (cs *cookieStore) Get(ctx context.Context) ([]byte, error) {
 }
 
 // Save stores the CSRF token in the session cookie.
-func (cs *cookieStore) Save(ctx context.Context, token []byte) error {
+func (cs *cookieStore) Save(ctx iris.Context, token []byte) error {
 	// Generate an encoded cookie value with the CSRF token.
 	encoded, err := cs.sc.Encode(cs.name, token)
 	if err != nil {

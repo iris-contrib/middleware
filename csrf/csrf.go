@@ -9,7 +9,6 @@ import (
 	"net/url"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
 
 	"github.com/gorilla/securecookie"
 )
@@ -74,7 +73,7 @@ type options struct {
 	Secure        bool
 	RequestHeader string
 	FieldName     string
-	ErrorHandler  context.Handler
+	ErrorHandler  iris.Handler
 	CookieName    string
 }
 
@@ -138,13 +137,13 @@ func New(authKey []byte, opts ...Option) *Csrf {
 // 'Forbidden' error response.
 //
 // Example: https://github.com/iris-contrib/middleware/tree/master/csrf/_example
-func Protect(authKey []byte, opts ...Option) context.Handler {
+func Protect(authKey []byte, opts ...Option) iris.Handler {
 	cs := New(authKey, opts...)
 	return cs.Serve
 }
 
 // Serve implements iris.Handler for the csrf type.
-func (cs *Csrf) Serve(ctx context.Context) {
+func (cs *Csrf) Serve(ctx iris.Context) {
 	// Skip the check if directed to. This should always be a bool.
 	if skip, _ := ctx.Values().GetBool(skipCheckKey); skip {
 		ctx.Next()
@@ -235,7 +234,7 @@ func (cs *Csrf) Serve(ctx context.Context) {
 
 // unauthorizedhandler sets a HTTP 403 Forbidden status and writes the
 // CSRF failure reason to the response.
-func unauthorizedHandler(ctx context.Context) {
+func unauthorizedHandler(ctx iris.Context) {
 	ctx.StatusCode(iris.StatusForbidden)
 	err := FailureReason(ctx)
 	if err != nil {

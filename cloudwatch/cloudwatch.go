@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -17,7 +17,7 @@ const PutMetricContextKey = "PUT_METRIC"
 
 // GetPutFunc returns the put func based on the context,
 // this can be called to add more metrics after the middleware's handler is executed.
-func GetPutFunc(ctx context.Context) func([]*cloudwatch.MetricDatum) {
+func GetPutFunc(ctx iris.Context) func([]*cloudwatch.MetricDatum) {
 	put := ctx.Values().Get(PutMetricContextKey)
 	if put == nil {
 		return nil
@@ -31,11 +31,11 @@ func GetPutFunc(ctx context.Context) func([]*cloudwatch.MetricDatum) {
 }
 
 // BeforeFunc called before handler
-type BeforeFunc func(context.Context, *Cloudwatch)
+type BeforeFunc func(iris.Context, *Cloudwatch)
 
 // AfterFunc is the func type called after calling the next func in
 // the middleware chain
-type AfterFunc func(context.Context, time.Duration, *Cloudwatch)
+type AfterFunc func(iris.Context, time.Duration, *Cloudwatch)
 
 // Cloudwatch is the metrics handler.
 type Cloudwatch struct {
@@ -102,7 +102,7 @@ func (cw *Cloudwatch) isExcludedURL(s string) bool {
 	return false
 }
 
-func (cw *Cloudwatch) ServeHTTP(ctx context.Context) {
+func (cw *Cloudwatch) ServeHTTP(ctx iris.Context) {
 	if cw.Before == nil {
 		cw.Before = DefaultBefore
 	}
@@ -128,12 +128,12 @@ func (cw *Cloudwatch) ServeHTTP(ctx context.Context) {
 }
 
 // DefaultBefore is the default func assigned to *Cloudwatch.Before
-func DefaultBefore(ctx context.Context, cw *Cloudwatch) {
+func DefaultBefore(ctx iris.Context, cw *Cloudwatch) {
 	ctx.Values().Set(PutMetricContextKey, cw.PutMetric)
 }
 
 // DefaultAfter is the default func assigned to *Cloudwatch.After
-func DefaultAfter(ctx context.Context, latency time.Duration, cw *Cloudwatch) {
+func DefaultAfter(ctx iris.Context, latency time.Duration, cw *Cloudwatch) {
 	ms := float64(latency.Nanoseconds() * 1000)
 	cw.PutMetric([]*cloudwatch.MetricDatum{
 		{

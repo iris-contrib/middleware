@@ -9,13 +9,13 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 )
 
 // Token returns a masked CSRF token ready for passing into HTML template or
 // a JSON response body. An empty token will be returned if the middleware
 // has not been applied (which will fail subsequent validation).
-func Token(ctx context.Context) string {
+func Token(ctx iris.Context) string {
 	if maskedToken := ctx.Values().GetString(tokenKey); maskedToken != "" {
 		return maskedToken
 	}
@@ -25,7 +25,7 @@ func Token(ctx context.Context) string {
 // FailureReason makes CSRF validation errors available in the request context.
 // This is useful when you want to log the cause of the error or report it to
 // client.
-func FailureReason(ctx context.Context) error {
+func FailureReason(ctx iris.Context) error {
 	if val := ctx.Values().Get(errorKey); val != nil {
 		if err, ok := val.(error); ok {
 			return err
@@ -41,7 +41,7 @@ func FailureReason(ctx context.Context) error {
 // Note: You should not set this without otherwise securing the request from
 // CSRF attacks. The primary use-case for this function is to turn off CSRF
 // checks for non-browser clients using authorization tokens against your API.
-func UnsafeSkipCheck(ctx context.Context) {
+func UnsafeSkipCheck(ctx iris.Context) {
 	ctx.Values().Set(skipCheckKey, true)
 }
 
@@ -56,7 +56,7 @@ func UnsafeSkipCheck(ctx context.Context) {
 //      // ... becomes:
 //      <input type="hidden" name="csrf.Token" value="<token>">
 //
-func TemplateField(ctx context.Context) template.HTML {
+func TemplateField(ctx iris.Context) template.HTML {
 	if name := ctx.Values().Get(formKey); name != nil {
 		fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
 			name, Token(ctx))
@@ -197,6 +197,6 @@ func contains(vals []string, s string) bool {
 }
 
 // envError stores a CSRF error in the request context.
-func envError(ctx context.Context, err error) {
+func envError(ctx iris.Context, err error) {
 	ctx.Values().Set(errorKey, err)
 }

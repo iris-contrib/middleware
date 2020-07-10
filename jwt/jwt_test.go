@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/iris/v12/httptest"
 )
 
@@ -32,7 +31,7 @@ func TestBasicJwt(t *testing.T) {
 		})
 	)
 
-	securedPingHandler := func(ctx context.Context) {
+	securedPingHandler := func(ctx iris.Context) {
 		userToken := j.Get(ctx)
 		var claimTestedValue string
 		if claims, ok := userToken.Claims.(MapClaims); ok && userToken.Valid {

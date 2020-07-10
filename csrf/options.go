@@ -1,6 +1,6 @@
 package csrf
 
-import "github.com/kataras/iris/v12/context"
+import "github.com/kataras/iris/v12"
 
 // Option describes a functional option for configuring the CSRF handler.
 type Option func(*Csrf)
@@ -65,7 +65,7 @@ func HTTPOnly(h bool) Option {
 //
 // Note that a custom error handler can also access the csrf.FailureReason(r)
 // function to retrieve the CSRF validation reason from the request context.
-func ErrorHandler(h context.Handler) Option {
+func ErrorHandler(h iris.Handler) Option {
 	return func(cs *Csrf) {
 		cs.opts.ErrorHandler = h
 	}

@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -59,7 +59,7 @@ func New(name string, buckets ...float64) *Prometheus {
 	return &p
 }
 
-func (p *Prometheus) ServeHTTP(ctx context.Context) {
+func (p *Prometheus) ServeHTTP(ctx iris.Context) {
 	start := time.Now()
 	ctx.Next()
 	r := ctx.Request()

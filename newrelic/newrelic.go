@@ -1,9 +1,7 @@
 package newrelic
 
 import (
-	"github.com/kataras/iris/v12/context"
-
-	"github.com/newrelic/go-agent"
+	"github.com/kataras/iris/v12"
 )
 
 // Newrelic represents the newrelic middleware.
@@ -29,7 +27,7 @@ func New(config newrelic.Config) (*Newrelic, error) {
 	return &Newrelic{Application: &app}, err
 }
 
-func (n *Newrelic) ServeHTTP(ctx context.Context) {
+func (n *Newrelic) ServeHTTP(ctx iris.Context) {
 	r, w := ctx.Request(), ctx.ResponseWriter()
 	name := r.URL.Path
 	txn := ((*n.Application).StartTransaction(name, w, r)).(newrelic.Transaction)

@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 )
 
 // Options is a configuration container to setup the CORS middleware.
@@ -73,7 +73,7 @@ type Cors struct {
 }
 
 // New creates a new Cors handler with the provided options.
-func New(options Options) context.Handler {
+func New(options Options) iris.Handler {
 	c := &Cors{
 		exposedHeaders:    convert(options.ExposedHeaders, http.CanonicalHeaderKey),
 		allowOriginFunc:   options.AllowOriginFunc,
@@ -145,13 +145,13 @@ func New(options Options) context.Handler {
 }
 
 // Default creates a new Cors handler with default options.
-func Default() context.Handler {
+func Default() iris.Handler {
 	return New(Options{})
 }
 
 // AllowAll create a new Cors handler with permissive configuration allowing all
 // origins with all standard methods with any header and credentials.
-func AllowAll() context.Handler {
+func AllowAll() iris.Handler {
 	return New(Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"HEAD", "GET", "POST", "PUT", "PATCH", "DELETE"},
@@ -162,7 +162,7 @@ func AllowAll() context.Handler {
 
 // Serve apply the CORS specification on the request, and add relevant CORS headers
 // as necessary.
-func (c *Cors) Serve(ctx context.Context) {
+func (c *Cors) Serve(ctx iris.Context) {
 	if ctx.Method() == http.MethodOptions && ctx.GetHeader("Access-Control-Request-Method") != "" {
 		c.logf("Serve: Preflight request")
 		c.handlePreflight(ctx)
@@ -186,7 +186,7 @@ func (c *Cors) Serve(ctx context.Context) {
 }
 
 // handlePreflight handles pre-flight CORS requests
-func (c *Cors) handlePreflight(ctx context.Context) {
+func (c *Cors) handlePreflight(ctx iris.Context) {
 	origin := ctx.GetHeader("Origin")
 
 	if ctx.Method() != http.MethodOptions {
@@ -254,7 +254,7 @@ func (c *Cors) handlePreflight(ctx context.Context) {
 }
 
 // handleActualRequest handles simple cross-origin requests, actual request or redirects
-func (c *Cors) handleActualRequest(ctx context.Context) {
+func (c *Cors) handleActualRequest(ctx iris.Context) {
 	origin := ctx.GetHeader("Origin")
 
 	if ctx.Method() == http.MethodOptions {

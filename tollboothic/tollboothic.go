@@ -4,7 +4,7 @@ package tollboothic
 import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12"
 )
 
 // LimitHandler is a middleware that performs
@@ -12,8 +12,8 @@ import (
 //
 // Read more at: https://github.com/didip/tollbooth
 // And https://github.com/didip/tollbooth_iris
-func LimitHandler(l *limiter.Limiter) context.Handler {
-	return func(ctx context.Context) {
+func LimitHandler(l *limiter.Limiter) iris.Handler {
+	return func(ctx iris.Context) {
 		httpError := tollbooth.LimitByRequest(l, ctx.ResponseWriter(), ctx.Request())
 		if httpError != nil {
 			ctx.ContentType(l.GetMessageContentType())
