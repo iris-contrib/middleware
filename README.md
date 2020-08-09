@@ -1,4 +1,4 @@
-This repository provides a way to share any minor handlers for [Iris v12.2.0+](https://github.com/kataras/iris) web framework. You can view the built'n supported handlers by pressing [here](https://github.com/kataras/iris/tree/v12/middleware).
+This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers]((https://github.com/kataras/iris/tree/v12/middleware).
 
 <!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=v12&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
 
@@ -7,7 +7,9 @@ This repository provides a way to share any minor handlers for [Iris v12.2.0+](h
 Install a middleware, take for example the [jwt](jwt) one.
 
 ```sh
-$ go get github.com/iris-contrib/middleware/jwt
+$ go mod init myapp
+$ go get github.com/kataras/iris/v12@master
+$ go get github.com/iris-contrib/middleware/jwt@master
 ```
 
 **import as**
@@ -24,8 +26,8 @@ Middleware is just a chain handlers which can be executed before or after the ma
 
 <!-- https://github.com/kataras/iris/blob/master/_examples/permissions/main.go -->
 
-| Middleware | Description | Example |
-| -----------|--------|-------------|
+| Middleware      | Description | Example     |
+| ----------------|-------------|-------------|
 | [jwt](jwt) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it | [jwt/_example](jwt/_example) |
 | [cors](cors) | HTTP Access Control. | [cors/_example](cors/_example) |
 | [secure](secure) | Middleware that implements a few quick security wins | [secure/_example](secure/_example/main.go) |
@@ -34,7 +36,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [new relic](newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent) | [newrelic/_example](newrelic/_example) |
 | [prometheus](prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [prometheus/_example](prometheus/_example) |
 | [casbin](casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](casbin/_examples) |
-| [raven](raven)| Sentry client in Go | [raven/_example](raven/_example/main.go) |
+| [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris)| Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) | <!-- raven was deprecated by its company, the successor is sentry-go, they contain an Iris middleware. -->
 | [csrf](csrf)| Cross-Site Request Forgery Protection | [csrf/_example](csrf/_example/main.go) |
 | [go-i18n](go-i18n)| Iris i18n Loader for nicksnyder/go-i18n | [go-i18n/_example](go-i18n/_example/main.go) |
 | [throttler](throttler)| Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |

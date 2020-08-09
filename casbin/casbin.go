@@ -9,8 +9,8 @@ import (
 )
 
 /*
-	Updated for the casbin 2.x released 3 days ago.
-	2019-07-15
+	Updated for the casbin 2.9 released 2 days ago.
+	2020-08-08
 */
 
 // New returns the auth service which receives a casbin enforcer.

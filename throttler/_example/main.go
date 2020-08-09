@@ -5,8 +5,8 @@ import (
 
 	"github.com/iris-contrib/middleware/throttler"
 
-	"github.com/throttled/throttled"
-	"github.com/throttled/throttled/store/memstore"
+	"github.com/throttled/throttled/v2"
+	"github.com/throttled/throttled/v2/store/memstore"
 )
 
 func main() {

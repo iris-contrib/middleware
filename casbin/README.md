@@ -6,8 +6,8 @@
 The authorization determines a request based on `{subject, object, action}`. Please refer to [the Casbin's documentation](https://github.com/casbin/casbin) in order to understand how it works first.
 
 ```sh
-$ go get github.com/casbin/casbin
-$ go get github.com/iris-contrib/middleware/casbin
+$ go get github.com/casbin/casbin/v2@v2.9.0
+$ go get github.com/iris-contrib/middleware/casbin@master
 ```
 
 ## Table of contents

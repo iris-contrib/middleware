@@ -6,6 +6,8 @@ import (
 	"github.com/iris-contrib/middleware/secure"
 )
 
+// $ go get github.com/iris-contrib/middleware/secure@master
+// $ go get github.com/kataras/iris/v12@master
 func main() {
 	s := secure.New(secure.Options{
 		AllowedHosts:            []string{"ssl.example.com"},                                                                                                                         // AllowedHosts is a list of fully qualified domain names that are allowed. Default is empty list, which allows any and all host names.

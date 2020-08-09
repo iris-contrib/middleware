@@ -8,7 +8,7 @@ import (
 
 	"github.com/kataras/iris/v12"
 
-	"github.com/throttled/throttled"
+	"github.com/throttled/throttled/v2"
 )
 
 var (

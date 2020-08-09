@@ -3,11 +3,12 @@ package main
 import (
 	"github.com/kataras/iris/v12"
 
-	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/v6"
 	"github.com/iris-contrib/middleware/tollboothic"
 )
 
-// $ go get github.com/didip/tollbooth
+// $ go get github.com/iris-contrib/middleware/tollboothic@master
+// $ go get github.com/didip/tollbooth/v6@latest
 // $ go run main.go
 
 func main() {
