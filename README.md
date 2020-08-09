@@ -17,10 +17,13 @@ $ go get github.com/iris-contrib/middleware/jwt@master
 ```go
 import "github.com/iris-contrib/middleware/jwt"
 
-// [...]
+// [...Code]
 ```
 
-> go build
+**build**
+```sh
+$ go build
+```
 
 Middleware is just a chain handlers which can be executed before or after the main handler, can transfer data between handlers and communicate with third-party libraries, they are just functions.
 
