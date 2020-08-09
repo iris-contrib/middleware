@@ -13,7 +13,7 @@ import (
 	"github.com/BurntSushi/toml"
 	goI18n "github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // NewLoader returns a Loader that loads the translate files using the go-i18n library which accepts yaml

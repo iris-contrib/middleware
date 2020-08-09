@@ -1,6 +1,8 @@
-This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/v12/middleware).
+# Iris Community Middleware List
 
-<!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=v12&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
+[![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=master&style=flat-square)](https://travis-ci.org/iris-contrib/middleware)
+
+This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/v12/middleware).
 
 ## Installation
 
@@ -36,7 +38,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [secure](secure) | Middleware that implements a few quick security wins | [secure/_example](secure/_example/main.go) |
 | [tollbooth](tollboothic) | Generic middleware to rate-limit HTTP requests | [tollboothic/_examples/limit-handler](tollboothic/_examples/limit-handler) |
 | [cloudwatch](cloudwatch) |  AWS cloudwatch metrics middleware |[cloudwatch/_example](cloudwatch/_example) |
-| [new relic](newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent) | [newrelic/_example](newrelic/_example) |
+| [newrelic/v3](newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent/tree/master/v3) | [newrelic/_example](newrelic/_example) |
 | [prometheus](prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [prometheus/_example](prometheus/_example) |
 | [casbin](casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](casbin/_examples) |
 | [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris)| Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) | <!-- raven was deprecated by its company, the successor is sentry-go, they contain an Iris middleware. -->
@@ -44,7 +46,8 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [go-i18n](go-i18n)| Iris i18n Loader for nicksnyder/go-i18n | [go-i18n/_example](go-i18n/_example/main.go) |
 | [throttler](throttler)| Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |
 
-### How can I register middleware?
+
+### Register a middleware
 
 **To a single route**
 
