@@ -1,4 +1,4 @@
-This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers]((https://github.com/kataras/iris/tree/v12/middleware).
+This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/v12/middleware).
 
 <!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=v12&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
 
