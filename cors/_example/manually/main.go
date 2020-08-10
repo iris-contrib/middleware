@@ -20,36 +20,34 @@ func main() {
 		ctx.Next()
 	} // or	"github.com/iris-contrib/middleware/cors"
 
-	v1 := app.Party("/api/v1", crs).AllowMethods(iris.MethodOptions) // <- important for the preflight.
-	{
-		v1.Post("/mailer", func(ctx iris.Context) {
-			var any iris.Map
-			err := ctx.ReadJSON(&any)
-			if err != nil {
-				ctx.StopWithError(iris.StatusBadRequest, err)
-				return
-			}
-			ctx.Application().Logger().Infof("received %#+v", any)
+	app.UseRouter(crs)
+	// OR per group of routes:
+	// api := app.Party("/api")
+	// api.AllowMethods(iris.MethodOptions) <- important for the preflight.
+	// api.Use(crs)
 
-			ctx.JSON(iris.Map{"message": "ok"})
-		})
+	api := app.Party("/api")
+	api.Post("/mailer", func(ctx iris.Context) {
+		var any iris.Map
+		err := ctx.ReadJSON(&any)
+		if err != nil {
+			ctx.StopWithError(iris.StatusBadRequest, err)
+			return
+		}
+		ctx.Application().Logger().Infof("received %#+v", any)
 
-		v1.Get("/home", func(ctx iris.Context) {
-			ctx.WriteString("Hello from /home")
-		})
-		v1.Get("/about", func(ctx iris.Context) {
-			ctx.WriteString("Hello from /about")
-		})
-		v1.Post("/send", func(ctx iris.Context) {
-			ctx.WriteString("sent")
-		})
-		v1.Put("/send", func(ctx iris.Context) {
-			ctx.WriteString("updated")
-		})
-		v1.Delete("/send", func(ctx iris.Context) {
-			ctx.WriteString("deleted")
-		})
-	}
+		ctx.JSON(iris.Map{"message": "ok"})
+	})
 
-	app.Listen(":80", iris.WithTunneling)
+	api.Post("/send", func(ctx iris.Context) {
+		ctx.WriteString("sent")
+	})
+	api.Put("/send", func(ctx iris.Context) {
+		ctx.WriteString("updated")
+	})
+	api.Delete("/send", func(ctx iris.Context) {
+		ctx.WriteString("deleted")
+	})
+
+	app.Listen(":8080", iris.WithTunneling)
 }

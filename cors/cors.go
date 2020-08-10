@@ -73,6 +73,10 @@ type Cors struct {
 }
 
 // New creates a new Cors handler with the provided options.
+// Use the Application.UseRouter method to register it globally,
+// this is the best option as it enables all the middleware's features.
+// Or to register it per group of routes use:
+// the Party.AllowMethods(iris.MethodOptions) and Party.Use methods instead.
 func New(options Options) iris.Handler {
 	c := &Cors{
 		exposedHeaders:    convert(options.ExposedHeaders, http.CanonicalHeaderKey),
@@ -192,8 +196,7 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if ctx.Method() != http.MethodOptions {
 		c.logf("  Preflight aborted: %s!=OPTIONS", ctx.Method())
 		//
-		ctx.StatusCode(http.StatusForbidden)
-		ctx.StopExecution()
+		ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -207,8 +210,7 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if !c.isOriginAllowed(origin) {
 		c.logf("  Preflight aborted: origin '%s' not allowed", origin)
 		//
-		ctx.StatusCode(http.StatusForbidden)
-		ctx.StopExecution()
+		ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -217,8 +219,7 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if !c.isMethodAllowed(reqMethod) {
 		c.logf("  Preflight aborted: method '%s' not allowed", reqMethod)
 		//
-		ctx.StatusCode(http.StatusForbidden)
-		ctx.StopExecution()
+		ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -226,8 +227,7 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if !c.areHeadersAllowed(reqHeaders) {
 		c.logf("  Preflight aborted: headers '%v' not allowed", reqHeaders)
 		//
-		ctx.StatusCode(http.StatusForbidden)
-		ctx.StopExecution()
+		ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -260,8 +260,7 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 	if ctx.Method() == http.MethodOptions {
 		c.logf("  Actual request no headers added: method == %s", ctx.Method())
 		//
-		ctx.StatusCode(http.StatusMethodNotAllowed)
-		ctx.StopExecution()
+		ctx.StopWithStatus(iris.StatusMethodNotAllowed)
 		//
 		return
 	}
@@ -275,8 +274,7 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 	if !c.isOriginAllowed(origin) {
 		c.logf("  Actual request no headers added: origin '%s' not allowed", origin)
 		//
-		ctx.StatusCode(http.StatusForbidden)
-		ctx.StopExecution()
+		ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -287,10 +285,7 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 	// We think it's a nice feature to be able to have control on those methods though.
 	if !c.isMethodAllowed(ctx.Method()) {
 		c.logf("  Actual request no headers added: method '%s' not allowed", ctx.Method())
-		//
-		ctx.StatusCode(http.StatusForbidden)
-		ctx.StopExecution()
-		//
+		ctx.StopWithStatus(iris.StatusForbidden)
 		return
 	}
 	if c.allowedOriginsAll && !c.allowCredentials {
