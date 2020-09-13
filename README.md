@@ -10,8 +10,8 @@ Install a middleware, take for example the [jwt](jwt) one.
 
 ```sh
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master
-$ go get github.com/iris-contrib/middleware/jwt@master
+$ go get github.com/kataras/iris/v12@v12.2.0-alpha
+$ go get github.com/iris-contrib/middleware/jwt
 ```
 
 **import as**
@@ -85,10 +85,16 @@ p.Use(logMiddleware)
 app.Use(func(ctx iris.Context) { }, myMiddleware2)
 ```
 
-**To global, all routes, parties and subdomains**
+**To global, all registered routes (including the http errors)**
 
 ```go
 app.UseGlobal(func(ctx iris.Context) { }, myMiddleware2)
+```
+
+**To Party and its children, even on unmatched routes and errors**
+
+```go
+app.UseRouter(func(ctx iris.Context) { }, myMiddleware2))
 ```
 
 ## Can I use standard net/http handler with iris?
