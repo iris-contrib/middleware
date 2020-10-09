@@ -6,9 +6,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+
+	"github.com/dgrijalva/jwt-go"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/jwt.*", "iris-contrib.jwt")
+}
 
 type (
 	// Token for JWT. Different fields will be used depending on whether you're

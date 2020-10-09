@@ -7,9 +7,14 @@ import (
 	"strconv"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/throttled/throttled/v2"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/throttler.*", "iris-contrib.throttler")
+}
 
 var (
 	// DefaultDeniedHandler is the default DeniedHandler for an

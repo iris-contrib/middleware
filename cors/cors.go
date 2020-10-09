@@ -8,7 +8,12 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/cors.*", "iris-contrib.cors")
+}
 
 // Options is a configuration container to setup the CORS middleware.
 type Options struct {

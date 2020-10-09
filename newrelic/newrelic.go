@@ -4,8 +4,14 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/newrelic.*", "iris-contrib.newrelic")
+}
 
 // Migration from newrelic to newrelic/v3:
 // https://github.com/newrelic/go-agent/blob/master/MIGRATION.md#configuration

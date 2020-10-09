@@ -5,12 +5,17 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/cloudwatch.*", "iris-contrib.cloudwatch")
+}
 
 // PutMetricContextKey is the context key which the metrics are stored.
 const PutMetricContextKey = "PUT_METRIC"

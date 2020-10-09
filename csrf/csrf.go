@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	context.SetHandlerName("github.com/iris-contrib/middleware/csrf.*", "iris.csrf.token")
+	context.SetHandlerName("github.com/iris-contrib/middleware/csrf.*", "iris-contrib.csrf.token")
 }
 
 // CSRF token length in bytes.

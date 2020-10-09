@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 
 	"github.com/casbin/casbin/v2"
 )
@@ -12,6 +13,10 @@ import (
 	Updated for the casbin 2.9 released 2 days ago.
 	2020-08-08
 */
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/casbin.*", "iris-contrib.casbin")
+}
 
 // New returns the auth service which receives a casbin enforcer.
 //

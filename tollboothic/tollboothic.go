@@ -2,10 +2,16 @@
 package tollboothic
 
 import (
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+
 	"github.com/didip/tollbooth/v6"
 	"github.com/didip/tollbooth/v6/limiter"
-	"github.com/kataras/iris/v12"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/tollboothic.*", "iris-contrib.tollboothic")
+}
 
 // LimitHandler is a middleware that performs
 // rate-limiting given a "limiter" configuration.

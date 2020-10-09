@@ -5,8 +5,14 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/prometheus.*", "iris-contrib.prometheus")
+}
 
 var (
 	// DefaultBuckets prometheus buckets in seconds.

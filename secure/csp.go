@@ -6,7 +6,12 @@ import (
 	"io"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/secure.*", "iris-contrib.secure")
+}
 
 const cspNonceKey string = "iris.secure.nonce"
 
