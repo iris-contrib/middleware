@@ -1,7 +1,6 @@
 package csrf
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -10,12 +9,12 @@ import (
 	"github.com/gorilla/securecookie"
 )
 
-// store represents the session storage used for CSRF tokens.
-type store interface {
+// Store represents the session storage used for CSRF tokens.
+type Store interface {
 	// Get returns the real CSRF token from the store.
-	Get(iris.Context) ([]byte, error)
+	Get(ctx iris.Context) ([]byte, error)
 	// Save stores the real CSRF token in the store and writes a
-	// cookie to the Context's http.ResponseWriter.
+	// cookie to the http.ResponseWriter.
 	// For non-cookie stores, the cookie should contain a unique (256 bit) ID
 	// or key that references the token in the backend store.
 	// csrf.GenerateRandomBytes is a helper function for generating secure IDs.
@@ -24,62 +23,99 @@ type store interface {
 
 // cookieStore is a signed cookie session store for CSRF tokens.
 type cookieStore struct {
-	name     string
-	maxAge   int
-	secure   bool
-	httpOnly bool
-	path     string
-	domain   string
-	sc       *securecookie.SecureCookie
+	// The authentication key provided should be 32 bytes
+	// long and persist across application restarts.
+	authKey []byte
+	options http.Cookie
+}
+
+// NewCookieStore returns a new Store that saves and retrieves
+// the CSRF token to and from the client's cookie jar.
+func NewCookieStore(authKey []byte, cookieOpts ...CookieOption) Store {
+	opts := http.Cookie{
+		Name:     DefaultCookieName,
+		Secure:   true,
+		HttpOnly: true,
+		SameSite: DefaultSameSite,
+		MaxAge:   DefaultMaxAge,
+	}
+
+	for _, opt := range cookieOpts {
+		if opt != nil {
+			opt(&opts)
+		}
+	}
+
+	return &cookieStore{
+		authKey: authKey,
+		options: opts,
+	}
+}
+
+var _ Store = (*cookieStore)(nil)
+
+// Note that, normally it would be safe to used across multiple requests as all fields EXCEPT one, the "error"
+// is not touched. So... create a new instance on each incoming request.
+func (cs *cookieStore) newSecureCookie() *securecookie.SecureCookie {
+	if len(cs.authKey) == 0 { // Check if we have an actual key.
+		return nil //  Otherwise don't encode/decode the cookie at all (not recommended but exists as an option).
+	}
+
+	secureCookie := securecookie.New(cs.authKey, nil)
+	// Use JSON serialization (faster than one-off gob encoding)
+	secureCookie.SetSerializer(securecookie.JSONEncoder{})
+	// Set the MaxAge of the underlying securecookie.
+	secureCookie.MaxAge(cs.options.MaxAge)
+
+	return secureCookie
 }
 
 // Get retrieves a CSRF token from the session cookie. It returns an empty token
 // if decoding fails (e.g. HMAC validation fails or the named cookie doesn't exist).
 func (cs *cookieStore) Get(ctx iris.Context) ([]byte, error) {
 	// Retrieve the cookie from the request
-	cookieValue := ctx.GetCookie(cs.name)
-	if cookieValue == "" {
-		return nil, fmt.Errorf("empty cookie")
-	}
-
-	token := make([]byte, tokenLength)
-	// Decode the HMAC authenticated cookie.
-	err := cs.sc.Decode(cs.name, cookieValue, &token)
+	cookie, err := ctx.Request().Cookie(cs.options.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	return token, nil
+	if sc := cs.newSecureCookie(); sc != nil {
+		token := make([]byte, tokenLength)
+		// Decode the HMAC authenticated cookie.
+		err = sc.Decode(cs.options.Name, cookie.Value, &token)
+		if err != nil {
+			return nil, err
+		}
+
+		return token, nil
+	}
+
+	return []byte(cookie.Value), nil
 }
 
 // Save stores the CSRF token in the session cookie.
-func (cs *cookieStore) Save(ctx iris.Context, token []byte) error {
-	// Generate an encoded cookie value with the CSRF token.
-	encoded, err := cs.sc.Encode(cs.name, token)
-	if err != nil {
-		return err
+func (cs *cookieStore) Save(ctx iris.Context, token []byte) (err error) {
+	var value string
+
+	if sc := cs.newSecureCookie(); sc != nil {
+		// Generate an encoded cookie value with the CSRF token.
+		value, err = sc.Encode(cs.options.Name, token)
+		if err != nil {
+			return
+		}
+	} else {
+		value = string(token)
 	}
 
-	cookie := &http.Cookie{
-		Name:     cs.name,
-		Value:    encoded,
-		MaxAge:   cs.maxAge,
-		HttpOnly: cs.httpOnly,
-		Secure:   cs.secure, // if true but not https then it fails ofc, so be careful.
-		Path:     cs.path,
-		Domain:   cs.domain,
-	}
-
+	cookie := cs.options
+	cookie.Value = value
 	// Set the Expires field on the cookie based on the MaxAge
 	// If MaxAge <= 0, we don't set the Expires attribute, making the cookie
 	// session-only.
-	if cs.maxAge > 0 {
-		cookie.Expires = time.Now().Add(
-			time.Duration(cs.maxAge) * time.Second)
+	if cookie.MaxAge > 0 {
+		cookie.Expires = time.Now().Add(time.Duration(cookie.MaxAge) * time.Second)
 	}
 
-	// Write the authenticated cookie to the response.
-	ctx.SetCookie(cookie)
-
-	return nil
+	ctx.SetCookie(&cookie)
+	return
 }

@@ -1,6 +1,6 @@
 # Iris Community Middleware List
 
-[![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=master&style=flat-square)](https://travis-ci.org/iris-contrib/middleware)
+<!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=master&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
 
 This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/v12/middleware).
 
@@ -10,8 +10,8 @@ Install a middleware, take for example the [jwt](jwt) one.
 
 ```sh
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@v12.2.0-alpha
-$ go get github.com/iris-contrib/middleware/jwt
+$ go get github.com/kataras/iris/v12@master
+$ go get github.com/iris-contrib/middleware/jwt@master
 ```
 
 **import as**

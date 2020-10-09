@@ -1,15 +1,93 @@
 package csrf
 
-import "github.com/kataras/iris/v12"
+import (
+	"net/http"
 
-// Option describes a functional option for configuring the CSRF handler.
-type Option func(*Csrf)
+	"github.com/kataras/iris/v12"
+)
+
+// Options describes the configuration for the CRSF middleware.
+type Options struct {
+	// Store lets you configure the backend storage of the CRSF session.
+	Store Store
+	// FieldName allows you to change the name attribute of the hidden <input> field
+	// inspected by this package. The default is 'csrf.token'.
+	FieldName string
+	// RequestHeader allows you to change the request header the CSRF middleware
+	// inspects. The default is X-CSRF-Token.
+	RequestHeader string
+	// ErrorHandler allows you to change the handler called when CSRF request
+	// processing encounters an invalid token or request. A typical use would be to
+	// provide a handler that returns a static HTML file with a HTTP 403 status. By
+	// default a HTTP 403 status and a plain text CSRF failure reason are served.
+	//
+	// Note that a custom error handler can also access the csrf.FailureReason(r)
+	// function to retrieve the CSRF validation reason from the request context.
+	ErrorHandler iris.Handler
+	// TrustedOrigins configures a set of origins (Referers) that are considered as trusted.
+	// This will allow cross-domain CSRF use-cases - e.g. where the front-end is served
+	// from a different domain than the API server - to correctly pass a CSRF check.
+	//
+	// You should only provide origins you own or have full control over.
+	TrustedOrigins []string
+}
+
+// CookieOption represents the Cookie configuration,
+// used by CookieStore.
+type CookieOption func(*http.Cookie)
+
+// CookieName changes the name of the CSRF cookie issued to clients.
+//
+// Note that cookie names should not contain whitespace, commas, semicolons,
+// backslashes or control characters as per RFC6265.
+func CookieName(name string) CookieOption {
+	return func(c *http.Cookie) {
+		c.Name = name
+	}
+}
+
+// Secure sets the 'Secure' flag on the cookie. Defaults to true (recommended).
+// Set this to 'false' in your development environment otherwise the cookie won't
+// be sent over an insecure channel. Setting this via the presence of a 'DEV'
+// environmental variable is a good way of making sure this won't make it to a
+// production environment.
+func Secure(secure bool) CookieOption {
+	return func(c *http.Cookie) {
+		c.Secure = secure
+	}
+}
+
+// HTTPOnly sets the 'HttpOnly' flag on the cookie. Defaults to true (recommended).
+func HTTPOnly(httpOnly bool) CookieOption {
+	return func(c *http.Cookie) {
+		c.HttpOnly = httpOnly
+	}
+}
+
+// SameSite sets the cookie SameSite attribute. Defaults to blank to maintain
+// backwards compatibility, however, Strict is recommended.
+//
+// SameSite(SameSiteStrictMode) will prevent the cookie from being sent by the
+// browser to the target site in all cross-site browsing context, even when
+// following a regular link (GET request).
+//
+// SameSite(SameSiteLaxMode) provides a reasonable balance between security and
+// usability for websites that want to maintain user's logged-in session after
+// the user arrives from an external link. The session cookie would be allowed
+// when following a regular link from an external website while blocking it in
+// CSRF-prone request methods (e.g. POST).
+func SameSite(sameSite http.SameSite) CookieOption {
+	return func(c *http.Cookie) {
+		c.SameSite = sameSite
+	}
+}
 
 // MaxAge sets the maximum age (in seconds) of a CSRF token's underlying cookie.
-// Defaults to 12 hours.
-func MaxAge(age int) Option {
-	return func(cs *Csrf) {
-		cs.opts.MaxAge = age
+// Defaults to 12 hours. Call csrf.MaxAge(0) to explicitly set session-only
+// cookies.
+func MaxAge(maxAge int) CookieOption {
+	return func(c *http.Cookie) {
+		c.MaxAge = maxAge
 	}
 }
 
@@ -19,9 +97,9 @@ func MaxAge(age int) Option {
 // This should be a hostname and not a URL. If set, the domain is treated as
 // being prefixed with a '.' - e.g. "example.com" becomes ".example.com" and
 // matches "www.example.com" and "secure.example.com".
-func Domain(domain string) Option {
-	return func(cs *Csrf) {
-		cs.opts.Domain = domain
+func Domain(domain string) CookieOption {
+	return func(c *http.Cookie) {
+		c.Domain = domain
 	}
 }
 
@@ -31,97 +109,8 @@ func Domain(domain string) Option {
 // This instructs clients to only respond with cookie for that path and its
 // subpaths - i.e. a cookie issued from "/register" would be included in requests
 // to "/register/step2" and "/register/submit".
-func Path(p string) Option {
-	return func(cs *Csrf) {
-		cs.opts.Path = p
+func Path(path string) CookieOption {
+	return func(c *http.Cookie) {
+		c.Path = path
 	}
-}
-
-// Secure sets the 'Secure' flag on the cookie. Defaults to true (is recommended but requires https).
-// Set this to 'false' in your development environment otherwise the cookie won't
-// be sent over an insecure channel. Setting this via the presence of a 'DEV'
-// environmental variable is a good way of making sure this won't make it to a
-// production environment.
-func Secure(s bool) Option {
-	return func(cs *Csrf) {
-		cs.opts.Secure = s
-	}
-}
-
-// HTTPOnly sets the 'HTTPOnly' flag on the cookie. Defaults to true (recommended).
-func HTTPOnly(h bool) Option {
-	return func(cs *Csrf) {
-		// Note that the function and field names match the case of the
-		// related http.Cookie field instead of the "correct" HTTPOnly name
-		// that golint suggests.
-		cs.opts.HTTPOnly = h
-	}
-}
-
-// ErrorHandler allows you to change the handler called when CSRF request
-// processing encounters an invalid token or request. A typical use would be to
-// provide a handler that returns a static HTML file with a HTTP 403 status. By
-// default a HTTP 403 status and a plain text CSRF failure reason are served.
-//
-// Note that a custom error handler can also access the csrf.FailureReason(r)
-// function to retrieve the CSRF validation reason from the request context.
-func ErrorHandler(h iris.Handler) Option {
-	return func(cs *Csrf) {
-		cs.opts.ErrorHandler = h
-	}
-}
-
-// RequestHeader allows you to change the request header the CSRF middleware
-// inspects. The default is X-CSRF-Token.
-func RequestHeader(header string) Option {
-	return func(cs *Csrf) {
-		cs.opts.RequestHeader = header
-	}
-}
-
-// FieldName allows you to change the name attribute of the hidden <input> field
-// inspected by this package. The default is 'csrf.Token'.
-func FieldName(name string) Option {
-	return func(cs *Csrf) {
-		cs.opts.FieldName = name
-	}
-}
-
-// CookieName changes the name of the CSRF cookie issued to clients.
-//
-// Note that cookie names should not contain whitespace, commas, semicolons,
-// backslashes or control characters as per RFC6265.
-func CookieName(name string) Option {
-	return func(cs *Csrf) {
-		cs.opts.CookieName = name
-	}
-}
-
-// setStore sets the store used by the CSRF middleware.
-// Note: this is private (for now) to allow for internal API changes.
-func setStore(s store) Option {
-	return func(cs *Csrf) {
-		cs.st = s
-	}
-}
-
-// parseOptions parses the supplied options functions and returns a configured
-// csrf handler.
-func parseOptions(opts ...Option) *Csrf {
-	cs := new(Csrf)
-
-	// Default to true. See Secure & HttpOnly function comments for rationale.
-	// Set here to allow package users to override the default.
-	cs.opts.Secure = true
-	cs.opts.HTTPOnly = true
-
-	// Range over each options function and apply it
-	// to our csrf type to configure it. Options functions are
-	// applied in order, with any conflicting options overriding
-	// earlier calls.
-	for _, option := range opts {
-		option(cs)
-	}
-
-	return cs
 }

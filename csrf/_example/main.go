@@ -19,19 +19,43 @@ import (
 func main() {
 	app := iris.New()
 	app.RegisterView(iris.HTML("./views", ".html"))
-	// Note that the authentication key provided should be 32 bytes
-	// long and persist across application restarts.
-	protect := csrf.Protect([]byte("9AB0F421E53A477C084477AEA06096F5"),
-		csrf.Secure(false)) // Defaults to true, but pass `false` while no https (devmode).
 
-	users := app.Party("/user", protect)
-	{
-		users.Get("/signup", getSignupForm)
-		// // POST requests without a valid token will return a HTTP 403 Forbidden.
-		users.Post("/signup", postSignupForm)
-	}
+	CSRF := csrf.Protect(
+		// Note that the authentication key provided should be 32 bytes
+		// long and persist across application restarts.
+		[]byte("9AB0F421E53A477C084477AEA06096F5"),
+		// WARNING: Set it to true on production with HTTPS.
+		csrf.Secure(false),
+	)
 
-	// GET: http://localhost:8080/user/signup
+	/*
+		Further customizations with the New package-level function:
+		CSRF := csrf.New(csrf.Options{
+			RequestHeader: "X-CSRF-Token",
+			FieldName:     "csrf.token",
+			ErrorHandler:  csrf.UnauthorizedHandler,
+			Store: csrf.NewCookieStore(
+				[]byte("9AB0F421E53A477C084477AEA06096F5"), csrf.Secure(false)),
+		})
+
+		CSRF.Filter  - is an iris Filter: func(iris.Context) bool
+		CSRF.Protect - is an iris Handler, the middleware: func(iris.Context)
+	*/
+
+	userAPI := app.Party("/user")
+	userAPI.Use(CSRF)
+	// To run this middleware on HTTP errors too:
+	// UseError(protect)
+	//
+	// OR to run it everywhere(all child parties, subdomains, errors),
+	// before the router itself:
+	// UseRouter(protect)
+
+	userAPI.Get("/signup", getSignupForm)
+	// POST requests without a valid token will return a HTTP 403 Forbidden.
+	userAPI.Post("/signup", postSignupForm)
+
+	// GET:  http://localhost:8080/user/signup
 	// POST: http://localhost:8080/user/signup
 	app.Listen(":8080")
 }

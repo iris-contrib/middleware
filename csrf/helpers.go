@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"net/http"
 	"net/url"
 
 	"github.com/kataras/iris/v12"
@@ -16,23 +15,14 @@ import (
 // a JSON response body. An empty token will be returned if the middleware
 // has not been applied (which will fail subsequent validation).
 func Token(ctx iris.Context) string {
-	if maskedToken := ctx.Values().GetString(tokenKey); maskedToken != "" {
-		return maskedToken
-	}
-	return ""
+	return ctx.Values().GetString(tokenKey)
 }
 
 // FailureReason makes CSRF validation errors available in the request context.
 // This is useful when you want to log the cause of the error or report it to
 // client.
 func FailureReason(ctx iris.Context) error {
-	if val := ctx.Values().Get(errorKey); val != nil {
-		if err, ok := val.(error); ok {
-			return err
-		}
-	}
-
-	return nil
+	return ctx.GetErr()
 }
 
 // UnsafeSkipCheck will skip the CSRF check for any requests.  This must be
@@ -42,7 +32,7 @@ func FailureReason(ctx iris.Context) error {
 // CSRF attacks. The primary use-case for this function is to turn off CSRF
 // checks for non-browser clients using authorization tokens against your API.
 func UnsafeSkipCheck(ctx iris.Context) {
-	ctx.Values().Set(skipCheckKey, true)
+	contextSave(ctx, skipCheckKey, true)
 }
 
 // TemplateField is a template helper for html/template that provides an <input> field
@@ -54,17 +44,16 @@ func UnsafeSkipCheck(ctx iris.Context) {
 //      {{ .csrfField }}
 //
 //      // ... becomes:
-//      <input type="hidden" name="csrf.Token" value="<token>">
+//      <input type="hidden" name="csrf.token" value="<token>">
 //
 func TemplateField(ctx iris.Context) template.HTML {
-	if name := ctx.Values().Get(formKey); name != nil {
-		fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`,
-			name, Token(ctx))
-
-		return template.HTML(fragment)
+	name := ctx.Values().GetString(formKey)
+	if name == "" {
+		return template.HTML("")
 	}
 
-	return template.HTML("")
+	fragment := fmt.Sprintf(`<input type="hidden" name="%s" value="%s">`, name, Token(ctx))
+	return template.HTML(fragment)
 }
 
 // mask returns a unique-per-request token to mitigate the BREACH attack
@@ -102,36 +91,6 @@ func unmask(issued []byte) []byte {
 	return xorToken(otp, masked)
 }
 
-// requestToken returns the issued token (pad + masked token) from the HTTP POST
-// body or HTTP header. It will return nil if the token fails to decode.
-func (cs *Csrf) requestToken(r *http.Request) []byte {
-	// 1. Check the HTTP header first.
-	issued := r.Header.Get(cs.opts.RequestHeader)
-
-	// 2. Fall back to the POST (form) value.
-	if issued == "" {
-		issued = r.PostFormValue(cs.opts.FieldName)
-	}
-
-	// 3. Finally, fall back to the multipart form (if set).
-	if issued == "" && r.MultipartForm != nil {
-		vals := r.MultipartForm.Value[cs.opts.FieldName]
-
-		if len(vals) > 0 {
-			issued = vals[0]
-		}
-	}
-
-	// Decode the "issued" (pad + masked) token sent in the request. Return a
-	// nil byte slice on a decoding error (this will fail upstream).
-	decoded, err := base64.StdEncoding.DecodeString(issued)
-	if err != nil {
-		return nil
-	}
-
-	return decoded
-}
-
 // generateRandomBytes returns securely generated random bytes.
 // It will return an error if the system's secure random number generator
 // fails to function correctly.
@@ -156,12 +115,6 @@ func sameOrigin(a, b *url.URL) bool {
 // compare securely (constant-time) compares the unmasked token from the request
 // against the real token from the session.
 func compareTokens(a, b []byte) bool {
-	// This is required as subtle.ConstantTimeCompare does not check for equal
-	// lengths in Go versions prior to 1.3.
-	if len(a) != len(b) {
-		return false
-	}
-
 	return subtle.ConstantTimeCompare(a, b) == 1
 }
 
@@ -198,5 +151,5 @@ func contains(vals []string, s string) bool {
 
 // envError stores a CSRF error in the request context.
 func envError(ctx iris.Context, err error) {
-	ctx.Values().Set(errorKey, err)
+	ctx.SetErr(err)
 }
