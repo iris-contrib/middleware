@@ -7,7 +7,7 @@ import (
 	cm "github.com/iris-contrib/middleware/casbin"
 )
 
-// $ go get github.com/casbin/casbin/v2@v2.9.0
+// $ go get github.com/casbin/casbin/v2@v2.13.1
 // $ go run main.go
 
 // Enforcer maps the model and the policy for the casbin service, we use this variable on the main_test too.
@@ -39,5 +39,7 @@ func main() {
 }
 
 func hi(ctx iris.Context) {
-	ctx.Writef("Hello %s", cm.Username(ctx.Request()))
+	// Note that, by default, the username is extracted by ctx.Request().BasicAuth
+	// to change that, use the `cm.SetUsername` before the casbin middleware's execution.
+	ctx.Writef("Hello %s", cm.Username(ctx))
 }
