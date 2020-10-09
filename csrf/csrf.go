@@ -7,7 +7,12 @@ import (
 	"net/url"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/csrf.*", "iris.csrf.token")
+}
 
 // CSRF token length in bytes.
 const tokenLength = 32

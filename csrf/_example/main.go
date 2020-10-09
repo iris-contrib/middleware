@@ -18,7 +18,7 @@ import (
 
 func main() {
 	app := iris.New()
-	app.RegisterView(iris.HTML("./views", ".html"))
+	app.Logger().SetLevel("debug")
 
 	CSRF := csrf.Protect(
 		// Note that the authentication key provided should be 32 bytes

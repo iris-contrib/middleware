@@ -1,4 +1,4 @@
-module github.com/gorilla/csrf
+module github.com/iris-contrib/middleware/csrf
 
 go 1.15
 
