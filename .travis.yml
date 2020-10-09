@@ -4,10 +4,12 @@ os:
   - linux
   - osx
 go:
-  - 1.15.x
+  - 1.15.2
+matrix:
+  exclude:
+    go: '1.15.2'
 env:
  global:
-   - GO111MODULE=on
    - GOPROXY=https://gocenter.io,https://goproxy.io,https://goproxy.cn,direct
 before_install:
   - chmod +x .travis.gofmt.sh
