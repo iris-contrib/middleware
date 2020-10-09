@@ -55,8 +55,24 @@ func main() {
 	// POST requests without a valid token will return a HTTP 403 Forbidden.
 	userAPI.Post("/signup", postSignupForm)
 
+	// Remove the CSRF middleware (1)
+	userAPI.Post("/unprotected", unprotected).
+		RemoveHandler(CSRF) // or RemoveHandler("iris-contrib.csrf.token")
+
+		/* Skip the CSRF check for a Party (2)
+		app.Use(func(ctx iris.Context){
+			shouldSkipCSRF = [custom condition...]
+			if shouldSkipCSRF {
+				csrf.UnsafeSkipCheck(ctx)
+			}
+			ctx.Next()
+		})
+		app.Use(CSRF)
+		*/
+
 	// GET:  http://localhost:8080/user/signup
 	// POST: http://localhost:8080/user/signup
+	// POST:  http://localhost:8080/user/unprotected
 	app.Listen(":8080")
 }
 
@@ -74,4 +90,8 @@ func getSignupForm(ctx iris.Context) {
 
 func postSignupForm(ctx iris.Context) {
 	ctx.Writef("You're welcome mate!")
+}
+
+func unprotected(ctx iris.Context) {
+	ctx.Writef("Hey, I am open to CSRF attacks!")
 }
