@@ -9,6 +9,7 @@ This repository provides a way to share community-based middlewares for [Iris v1
 Install a middleware, take for example the [jwt](jwt) one.
 
 ```sh
+$ go env -w GOPROXY=goproxy.cn,gocenter.io,goproxy.io,direct
 $ go mod init myapp
 $ go get github.com/kataras/iris/v12@master
 $ go get github.com/iris-contrib/middleware/jwt@master
