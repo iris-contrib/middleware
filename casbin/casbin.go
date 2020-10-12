@@ -7,19 +7,24 @@ import (
 	"github.com/casbin/casbin/v2"
 )
 
-/*
-	Updated for the casbin 2.9 released 2 days ago.
-	2020-08-08
-*/
-
 func init() {
 	context.SetHandlerName("github.com/iris-contrib/middleware/casbin.*", "iris-contrib.casbin")
 }
 
+// Casbin is the auth services which contains the casbin enforcer.
+type Casbin struct {
+	enforcer *casbin.Enforcer
+	// Can be used to customize the username passed to the casbin enforcer.
+	UsernameExtractor func(iris.Context) string
+}
+
 // New returns the auth service which receives a casbin enforcer.
-//
-// Adapt with its `Wrapper` for the entire application
-// or its `ServeHTTP` for specific routes or parties.
+// The username that casbin requires is extracted by:
+// - UsernameExtractor
+// - casbin.Username
+//  | set with casbin.SetUsername
+// - Context.User().GetUsername()
+//  | by a prior auth middleware through Context.SetUser
 func New(e *casbin.Enforcer) *Casbin {
 	return &Casbin{enforcer: e}
 }
@@ -38,11 +43,6 @@ func (c *Casbin) ServeHTTP(ctx iris.Context) {
 	ctx.Next()
 }
 
-// Casbin is the auth services which contains the casbin enforcer.
-type Casbin struct {
-	enforcer *casbin.Enforcer
-}
-
 // Check checks the username, request's method and path and
 // returns true if permission grandted otherwise false.
 //
@@ -51,7 +51,13 @@ type Casbin struct {
 // - inside a handler
 // - using the iris.NewConditionalHandler
 func (c *Casbin) Check(ctx iris.Context) bool {
-	username := Username(ctx)
+	var username string
+	if c.UsernameExtractor != nil {
+		username = c.UsernameExtractor(ctx)
+	} else {
+		username = Username(ctx)
+	}
+
 	ok, _ := c.enforcer.Enforce(username, ctx.Path(), ctx.Method())
 	return ok
 }
@@ -64,9 +70,11 @@ const usernameContextKey = "iris.contrib.casbin.username"
 func Username(ctx iris.Context) string {
 	username := ctx.Values().GetString(usernameContextKey)
 	if username == "" {
-		username, _, _ = ctx.Request().BasicAuth()
-	}
+		if u := ctx.User(); u != nil {
+			username = u.GetUsername()
+		}
 
+	}
 	return username
 }
 
