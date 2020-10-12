@@ -1,7 +1,6 @@
 p, alice, /dataset1/*, GET
 p, alice, /dataset1/resource1, POST
+p, bob, /, GET
 p, bob, /dataset2/resource1, *
 p, bob, /dataset2/resource2, GET
 p, bob, /dataset2/folder1/*, POST
-p, dataset1_admin, /dataset1/*, *
-g, cathrin, dataset1_admin
