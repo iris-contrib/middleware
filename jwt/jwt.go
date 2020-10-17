@@ -241,7 +241,7 @@ func (m *Middleware) CheckJWT(ctx iris.Context) error {
 	// Check if the parsed token is valid...
 	if !parsedToken.Valid {
 		logf(ctx, "Token is invalid")
-		m.Config.ErrorHandler(ctx, ErrTokenInvalid)
+		// m.Config.ErrorHandler(ctx, ErrTokenInvalid)
 		return ErrTokenInvalid
 	}
 

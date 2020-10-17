@@ -34,7 +34,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 
 | Middleware      | Description | Example     |
 | ----------------|-------------|-------------|
-| [jwt](jwt) | Middleware checks for a JWT on the `Authorization` header on incoming requests and decodes it | [jwt/_example](jwt/_example) |
+| [jwt](jwt) | JSON Web Tokens | [jwt](jwt) |
 | [cors](cors) | HTTP Access Control. | [cors/_example](cors/_example) |
 | [secure](secure) | Middleware that implements a few quick security wins | [secure/_example](secure/_example/main.go) |
 | [tollbooth](tollboothic) | Generic middleware to rate-limit HTTP requests | [tollboothic/_examples/limit-handler](tollboothic/_examples/limit-handler) |
@@ -44,7 +44,6 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [casbin](casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](casbin/_examples) |
 | [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris)| Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) | <!-- raven was deprecated by its company, the successor is sentry-go, they contain an Iris middleware. -->
 | [csrf](csrf)| Cross-Site Request Forgery Protection | [csrf/_example](csrf/_example/main.go) |
-| [go-i18n](go-i18n)| Iris i18n Loader for nicksnyder/go-i18n | [go-i18n/_example](go-i18n/_example/main.go) |
 | [throttler](throttler)| Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |
 
 

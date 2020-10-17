@@ -3,7 +3,7 @@ package jwt
 import "github.com/dgrijalva/jwt-go"
 
 const (
-	//DefaultContextKey jwt
+	// DefaultContextKey jwt
 	DefaultContextKey = "jwt"
 )
 
