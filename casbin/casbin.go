@@ -71,7 +71,7 @@ func Username(ctx iris.Context) string {
 	username := ctx.Values().GetString(usernameContextKey)
 	if username == "" {
 		if u := ctx.User(); u != nil {
-			username = u.GetUsername()
+			username, _ = u.GetUsername()
 		}
 
 	}
