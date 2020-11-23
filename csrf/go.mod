@@ -1,4 +1,4 @@
-module github.com/iris-contrib/middleware/csrf
+module github.com/Thelvaen/middleware/csrf
 
 go 1.15
 
