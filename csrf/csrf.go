@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
@@ -181,13 +182,22 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 				return false
 			}
 
-			if ctx.Host() != referer.Hostname() {
+			valid := false
+			if strings.Compare(referer.Host, ctx.Host()) == 0 {
+				valid = true
+			}
+			if !valid {
 				for _, trustedOrigin := range opts.TrustedOrigins {
 					if referer.Host == trustedOrigin {
 						valid = true
 						break
 					}
 				}
+			}
+
+			if !valid {
+				envError(ctx, ErrBadReferer)
+				return false
 			}
 
 			if valid == false {
