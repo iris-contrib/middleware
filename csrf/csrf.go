@@ -183,7 +183,7 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 			}
 
 			valid := false
-			if strings.Compare(referer.Host, ctx.Host()) == 0 {
+			if strings.EqualFold(referer.Host, ctx.Host()) {
 				valid = true
 			}
 			if !valid {
