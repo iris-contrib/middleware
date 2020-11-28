@@ -181,14 +181,7 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 				return false
 			}
 
-			rURL, err := url.Parse(ctx.Scheme() + ctx.Host() + ctx.Request().RequestURI)
-			if err != nil {
-				envError(ctx, err)
-				return false
-			}
-			valid := sameOrigin(rURL, referer)
-
-			if !valid {
+			if ctx.Host() != referer.Hostname() {
 				for _, trustedOrigin := range opts.TrustedOrigins {
 					if referer.Host == trustedOrigin {
 						valid = true
