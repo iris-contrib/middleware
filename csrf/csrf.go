@@ -58,8 +58,6 @@ var (
 	// ErrBadToken is returned if the CSRF token in the request does not match
 	// the token in the session, or is otherwise malformed.
 	ErrBadToken = errors.New("CSRF token invalid")
-	// ErrParseURL is returned when the CSRF middleware can't parse the URL
-	ErrParseURL = errors.New("Can't Parse URL from context")
 )
 
 // CSRF represents the CSRF feature.
@@ -182,10 +180,7 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 				return false
 			}
 
-			valid := false
-			if strings.EqualFold(referer.Host, ctx.Host()) {
-				valid = true
-			}
+			valid := strings.EqualFold(referer.Host, ctx.Host())
 			if !valid {
 				for _, trustedOrigin := range opts.TrustedOrigins {
 					if referer.Host == trustedOrigin {
@@ -200,10 +195,6 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 				return false
 			}
 
-			if valid == false {
-				envError(ctx, ErrBadReferer)
-				return false
-			}
 		}
 
 		// If the token returned from the session store is nil for non-idempotent
