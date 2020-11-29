@@ -180,21 +180,12 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 				return false
 			}
 
-			valid := strings.EqualFold(referer.Host, ctx.Host())
-			if !valid {
-				for _, trustedOrigin := range opts.TrustedOrigins {
-					if referer.Host == trustedOrigin {
-						valid = true
-						break
-					}
+			if !strings.EqualFold(referer.Host, ctx.Host()) {
+				if !contains(opts.TrustedOrigins, referer.Host) {
+					envError(ctx, ErrBadReferer)
+					return false
 				}
 			}
-
-			if !valid {
-				envError(ctx, ErrBadReferer)
-				return false
-			}
-
 		}
 
 		// If the token returned from the session store is nil for non-idempotent
