@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"html/template"
-	"net/url"
 
 	"github.com/kataras/iris/v12"
 )
@@ -104,12 +103,6 @@ func generateRandomBytes(n int) ([]byte, error) {
 
 	return b, nil
 
-}
-
-// sameOrigin returns true if URLs a and b share the same origin. The same
-// origin is defined as host (which includes the port) and scheme.
-func sameOrigin(a, b *url.URL) bool {
-	return (a.Scheme == b.Scheme && a.Host == b.Host)
 }
 
 // compare securely (constant-time) compares the unmasked token from the request
