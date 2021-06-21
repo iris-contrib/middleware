@@ -8,12 +8,8 @@ import (
 	"strings"
 
 	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
 )
 
-func init() {
-	context.SetHandlerName("github.com/iris-contrib/middleware/cors.*", "iris-contrib.cors")
-}
 
 // Options is a configuration container to setup the CORS middleware.
 type Options struct {
@@ -201,7 +197,9 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if ctx.Method() != http.MethodOptions {
 		c.logf("  Preflight aborted: %s!=OPTIONS", ctx.Method())
 		//
-		ctx.StopWithStatus(iris.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -215,7 +213,9 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if !c.isOriginAllowed(origin) {
 		c.logf("  Preflight aborted: origin '%s' not allowed", origin)
 		//
-		ctx.StopWithStatus(iris.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -224,7 +224,9 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if !c.isMethodAllowed(reqMethod) {
 		c.logf("  Preflight aborted: method '%s' not allowed", reqMethod)
 		//
-		ctx.StopWithStatus(iris.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -232,7 +234,9 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 	if !c.areHeadersAllowed(reqHeaders) {
 		c.logf("  Preflight aborted: headers '%v' not allowed", reqHeaders)
 		//
-		ctx.StopWithStatus(iris.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -265,7 +269,9 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 	if ctx.Method() == http.MethodOptions {
 		c.logf("  Actual request no headers added: method == %s", ctx.Method())
 		//
-		ctx.StopWithStatus(iris.StatusMethodNotAllowed)
+		ctx.StatusCode(iris.StatusMethodNotAllowed)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusMethodNotAllowed)
 		//
 		return
 	}
@@ -279,7 +285,9 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 	if !c.isOriginAllowed(origin) {
 		c.logf("  Actual request no headers added: origin '%s' not allowed", origin)
 		//
-		ctx.StopWithStatus(iris.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusForbidden)
 		//
 		return
 	}
@@ -290,7 +298,9 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 	// We think it's a nice feature to be able to have control on those methods though.
 	if !c.isMethodAllowed(ctx.Method()) {
 		c.logf("  Actual request no headers added: method '%s' not allowed", ctx.Method())
-		ctx.StopWithStatus(iris.StatusForbidden)
+		ctx.StatusCode(iris.StatusForbidden)
+		ctx.StopExecution()
+		//ctx.StopWithStatus(iris.StatusForbidden)
 		return
 	}
 	if c.allowedOriginsAll && !c.allowCredentials {
