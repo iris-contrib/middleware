@@ -22,7 +22,8 @@ func TestCorsAllowOrigins(t *testing.T) {
 	}
 
 	app := iris.New()
-	app.UseRouter(cors.New(opts))
+	//app.UseRouter(cors.New(opts))
+	app.UseGlobal(cors.New(opts))
 	// OR per group of routes:
 	// v1 := app.Party("/v1")
 	// v1.AllowMethods(iris.MethodOptions)
