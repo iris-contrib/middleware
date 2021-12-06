@@ -83,7 +83,6 @@ func putMetric(cw *Cloudwatch, data []*cloudwatch.MetricDatum) {
 		Namespace:  aws.String(cw.Namespace),
 	}
 	_, err := cw.Service.PutMetricData(params)
-
 	if err != nil {
 		if awsErr, ok := err.(awserr.Error); ok {
 			fmt.Println(awsErr.Code())

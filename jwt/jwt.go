@@ -9,7 +9,7 @@ import (
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/golang-jwt/jwt/v4"
 )
 
 func init() {
@@ -84,7 +84,6 @@ func OnError(ctx iris.Context, err error) {
 
 // New constructs a new Secure instance with supplied options.
 func New(cfg ...Config) *Middleware {
-
 	var c Config
 	if len(cfg) == 0 {
 		c = Config{}
@@ -141,7 +140,7 @@ func FromAuthHeader(ctx iris.Context) (string, error) {
 	// TODO: Make this a bit more robust, parsing-wise
 	authHeaderParts := strings.Split(authHeader, " ")
 	if len(authHeaderParts) != 2 || strings.ToLower(authHeaderParts[0]) != "bearer" {
-		return "", fmt.Errorf("Authorization header format must be Bearer {token}")
+		return "", fmt.Errorf("authorization header format must be Bearer {token}")
 	}
 
 	return authHeaderParts[1], nil
@@ -198,7 +197,6 @@ func (m *Middleware) CheckJWT(ctx iris.Context) error {
 
 	// Use the specified token extractor to extract a token from the request
 	token, err := m.Config.Extractor(ctx)
-
 	// If debugging is turned on, log the outcome
 	if err != nil {
 		logf(ctx, "Error extracting JWT: %v", err)
@@ -231,7 +229,7 @@ func (m *Middleware) CheckJWT(ctx iris.Context) error {
 	}
 
 	if m.Config.SigningMethod != nil && m.Config.SigningMethod.Alg() != parsedToken.Header["alg"] {
-		err := fmt.Errorf("Expected %s signing method but token specified %s",
+		err := fmt.Errorf("expected %s signing method but token specified %s",
 			m.Config.SigningMethod.Alg(),
 			parsedToken.Header["alg"])
 		logf(ctx, "Error validating token algorithm: %v", err)
