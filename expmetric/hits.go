@@ -3,6 +3,7 @@ package expmetric
 import (
 	"expvar"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/kataras/iris/v12"
@@ -65,7 +66,11 @@ func HitsTotal(options ...Option) iris.Handler {
 
 	var hitsAvgVar *expvar.Int
 	if opts.avgEnabled() {
-		hitsAvgVar = expvar.NewInt(fmt.Sprintf("%s_avg", opts.MetricName))
+		charSplitter := "_"
+		if strings.Contains(opts.MetricName, ".") {
+			charSplitter = "."
+		}
+		hitsAvgVar = expvar.NewInt(fmt.Sprintf("%s%savg", opts.MetricName, charSplitter))
 	}
 
 	return func(ctx iris.Context) {
