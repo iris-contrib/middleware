@@ -66,11 +66,7 @@ func HitsTotal(options ...Option) iris.Handler {
 
 	var hitsAvgVar *expvar.Int
 	if opts.avgEnabled() {
-		charSplitter := "_"
-		if strings.Contains(opts.MetricName, ".") {
-			charSplitter = "."
-		}
-		hitsAvgVar = expvar.NewInt(fmt.Sprintf("%s%savg", opts.MetricName, charSplitter))
+		hitsAvgVar = expvar.NewInt(getMetricNameForAvg(opts.MetricName))
 	}
 
 	return func(ctx iris.Context) {
@@ -83,6 +79,15 @@ func HitsTotal(options ...Option) iris.Handler {
 
 		ctx.Next()
 	}
+}
+
+func getMetricNameForAvg(metricName string) string {
+	charSplitter := "_"
+	if strings.Contains(metricName, ".") {
+		charSplitter = "."
+	}
+
+	return fmt.Sprintf("%s%savg", metricName, charSplitter)
 }
 
 func hits(interval time.Duration, opts Options) iris.Handler {
@@ -106,7 +111,7 @@ func hits(interval time.Duration, opts Options) iris.Handler {
 
 	var hitsAvgVar *expvar.Int
 	if opts.avgEnabled() {
-		hitsAvgVar = expvar.NewInt(fmt.Sprintf("%s_avg", opts.MetricName))
+		hitsAvgVar = expvar.NewInt(getMetricNameForAvg(opts.MetricName))
 	}
 
 	counter := ratecounter.NewRateCounter(interval).WithResolution(opts.Resolution)
