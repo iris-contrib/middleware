@@ -45,7 +45,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris)| Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) | <!-- raven was deprecated by its company, the successor is sentry-go, they contain an Iris middleware. -->
 | [csrf](csrf)| Cross-Site Request Forgery Protection | [csrf/_example](csrf/_example/main.go) |
 | [throttler](throttler)| Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |
-
+| [expmetric](expmetric)| Expvar for counting requests etc. | [expmetric/_example](expmetric/_example/main.go) |
 
 ### Register a middleware
 
