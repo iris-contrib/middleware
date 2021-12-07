@@ -48,6 +48,15 @@ func covertValue(value interface{}) (expvar.Var, error) {
 	return valueVar, nil
 }
 
+// KeyValue registers a Map expvar which is filled based on
+// keyFunc and valueFunc input arguments.
+// Supported values that a ValueFunc can return are:
+// - string
+// - int64
+// - any value which completes the String() string method
+// - any value which completes the json.Marshaler
+// - any struct that can be displayed as JSON
+// Look the "convertValue" function for details.
 func KeyValue(keyFunc KeyFunc, valueFunc ValueFunc, options ...Option) iris.Handler {
 	opts := applyOptions(options)
 

@@ -123,6 +123,17 @@ func HitsTotalPerUserID(options ...Option) iris.Handler {
 	return HitsTotalWithKeyFunc(keyFunc, options...)
 }
 
+// HitsTotalPerPath registers a Map expvar which
+// contains the visited paths and the total count of visits as their value.
+func HitsTotalPerPath(options ...Option) iris.Handler {
+	keyFunc := func(ctx iris.Context) string {
+		key := ctx.Path()
+		return key
+	}
+
+	return HitsTotalWithKeyFunc(keyFunc, options...)
+}
+
 func getMetricNameForAvg(metricName string) string {
 	charSplitter := "_"
 	if strings.Contains(metricName, ".") {
