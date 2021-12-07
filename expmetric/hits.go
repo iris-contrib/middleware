@@ -83,7 +83,7 @@ func HitsTotal(options ...Option) iris.Handler {
 
 // HitsTotalWithKeyFunc registers a Map expvar counter which increments
 // the number of hits inside a map based on the keyFunc.
-func HitsTotalWithKeyFunc(keyFunc func(ctx iris.Context) string, options ...Option) iris.Handler {
+func HitsTotalWithKeyFunc(keyFunc KeyFunc, options ...Option) iris.Handler {
 	opts := applyOptions(options)
 
 	if opts.MetricName == "" {
@@ -106,6 +106,17 @@ func HitsTotalWithKeyFunc(keyFunc func(ctx iris.Context) string, options ...Opti
 func HitsTotalPerUserEmail(options ...Option) iris.Handler {
 	keyFunc := func(ctx iris.Context) string {
 		email, _ := ctx.User().GetEmail()
+		return email
+	}
+
+	return HitsTotalWithKeyFunc(keyFunc, options...)
+}
+
+// HitsTotalPerUserEmail registers a Map expvar counter which increments
+// the number of hits per authenticated user's id.
+func HitsTotalPerUserID(options ...Option) iris.Handler {
+	keyFunc := func(ctx iris.Context) string {
+		email, _ := ctx.User().GetID()
 		return email
 	}
 
