@@ -20,7 +20,7 @@ type directStringVar string
 
 func (s directStringVar) String() string { return string(s) }
 
-func covertValue(value interface{}) (expvar.Var, error) {
+func convertValue(value interface{}) (expvar.Var, error) {
 	var valueVar expvar.Var
 
 	switch v := value.(type) {
@@ -69,7 +69,7 @@ func KeyValue(keyFunc KeyFunc, valueFunc ValueFunc, options ...Option) iris.Hand
 	return func(ctx iris.Context) {
 		if key := keyFunc(ctx); key != "" {
 			if value, ok := valueFunc(ctx); ok {
-				valueVar, err := covertValue(value)
+				valueVar, err := convertValue(value)
 				if err != nil {
 					ctx.SetErr(err)
 					ctx.Next()
