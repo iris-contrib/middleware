@@ -1,6 +1,46 @@
 version: 2
 updates:
   - package-ecosystem: "gomod"
-    directory: "/"
+    directory: "/casbin"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/cloudwatch"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/cors"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/csrf"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/expmetric"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/jwt"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/newrelic"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/prometheus"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/secure"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/throttler"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/tollboothic"
     schedule:
       interval: "daily"
