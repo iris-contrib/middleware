@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/kataras/iris/v12 v12.2.0-beta3
-	github.com/newrelic/go-agent/v3 v3.16.1
+	github.com/newrelic/go-agent/v3 v3.17.0
 )
 
 require (
