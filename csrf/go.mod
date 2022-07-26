@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/gorilla/securecookie v1.1.1
-	github.com/kataras/iris/v12 v12.2.0-beta4
+	github.com/kataras/iris/v12 v12.2.0-beta4.0.20220726083256-8c7399229eca
 )
 
 require (
@@ -29,7 +29,7 @@ require (
 	github.com/kataras/pio v0.0.10 // indirect
 	github.com/kataras/sitemap v0.0.5 // indirect
 	github.com/kataras/tunnel v0.0.4 // indirect
-	github.com/klauspost/compress v1.15.8 // indirect
+	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/mailgun/raymond/v2 v2.0.46 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/microcosm-cc/bluemonday v1.0.19 // indirect
