@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/kataras/iris/v12 v12.2.0-beta5
-	github.com/newrelic/go-agent/v3 v3.19.1
+	github.com/newrelic/go-agent/v3 v3.19.2
 )
 
 require (
@@ -51,7 +51,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
-	google.golang.org/grpc v1.39.0 // indirect
+	google.golang.org/grpc v1.49.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
