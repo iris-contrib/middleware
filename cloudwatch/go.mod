@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/cloudwatch
 go 1.19
 
 require (
-	github.com/aws/aws-sdk-go v1.44.120
+	github.com/aws/aws-sdk-go v1.44.121
 	github.com/kataras/iris/v12 v12.2.0-beta6
 )
 
