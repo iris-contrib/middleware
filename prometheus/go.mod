@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/kataras/iris/v12 v12.2.0-beta6
-	github.com/prometheus/client_golang v1.13.0
+	github.com/prometheus/client_golang v1.13.1
 )
 
 require (
