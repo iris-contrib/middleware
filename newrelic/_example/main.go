@@ -1,49 +1,78 @@
 package main
 
 import (
+	"fmt"
 	"os"
-	"time"
 
+	nriris "github.com/iris-contrib/middleware/newrelic"
 	"github.com/kataras/iris/v12"
-
-	irisnewrelic "github.com/iris-contrib/middleware/newrelic"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
-func main() {
-	app := iris.New()
+func v1login(ctx iris.Context)  { ctx.WriteString("v1 login") }
+func v1submit(ctx iris.Context) { ctx.WriteString("v1 submit") }
+func v1read(ctx iris.Context)   { ctx.WriteString("v1 read") }
 
-	// Create a newrelic.Application and return the middleware.
-	m, err := irisnewrelic.New(
-		newrelic.ConfigAppName("My Application"),
-		newrelic.ConfigLicense(os.Getenv("NEWRELIC_LIECNSE_KEY")),
+func endpoint404(ctx iris.Context) {
+	ctx.StatusCode(404)
+	ctx.WriteString("returning 404")
+}
+
+func endpointChangeCode(ctx iris.Context) {
+	ctx.StatusCode(404)
+	ctx.StatusCode(200)
+	ctx.WriteString("actually ok!")
+}
+
+func endpointResponseHeaders(ctx iris.Context) {
+	ctx.ContentType("application/json")
+	ctx.WriteString(`{"zip":"zap"}`)
+}
+
+func endpointNotFound(ctx iris.Context) {
+	ctx.WriteString("there's no endpoint for that!")
+}
+
+func endpointAccessTransaction(ctx iris.Context) {
+	txn := nriris.Transaction(ctx)
+	txn.SetName("custom-name")
+	ctx.WriteString("changed the name of the transaction!")
+}
+
+func main() {
+	app, err := newrelic.NewApplication(
+		newrelic.ConfigAppName("Iris App"),
+		// https://docs.newrelic.com/docs/apis/intro-apis/new-relic-api-keys/
+		newrelic.ConfigLicense(os.Getenv("NEW_RELIC_LICENSE_KEY")),
+		//	newrelic.ConfigDebugLogger(os.Stdout),
+		newrelic.ConfigCodeLevelMetricsEnabled(true),
 	)
-	if err != nil {
-		app.Logger().Fatal(err)
+	if nil != err {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
-	// Or wrap an existing newrelic Application and return the middleware:
-	// m := irisnewrelic.Wrap(existingApplication)
+	router := iris.New()
+	router.Use(nriris.New(app))
 
-	// Register the middleware.
-	app.Use(m)
+	router.Get("/404", endpoint404)
+	router.Get("/change", endpointChangeCode)
+	router.Get("/headers", endpointResponseHeaders)
+	router.Get("/txn", endpointAccessTransaction)
 
-	app.Get("/", func(ctx iris.Context) {
-		// The txn.End() method will be AUTOMATICALLY called
-		// at the end of the handler chain of this request,
-		// no need to call it by yourself.
-		txn := irisnewrelic.GetTransaction(ctx)
-
-		if v, _ := ctx.URLParamBool("segments"); v {
-			// Starts a new segment:
-			defer txn.StartSegment("f1").End()
-
-			ctx.WriteString("segments!")
-			time.Sleep(8 * time.Millisecond)
-		}
-
-		ctx.HTML(`<h3 style="color:green;">%s</h3>`, "success")
+	// Since the handler function name is used as the transaction name,
+	// anonymous functions do not get usefully named.  We encourage
+	// transforming anonymous functions into named functions.
+	router.Get("/anon", func(ctx iris.Context) {
+		ctx.WriteString("anonymous function handler")
 	})
 
-	app.Listen(":8080")
+	v1 := router.Party("/v1")
+	v1.Get("/login", v1login)
+	v1.Get("/submit", v1submit)
+	v1.Get("/read", v1read)
+
+	router.OnErrorCode(404, endpointNotFound)
+
+	router.Listen(":8000")
 }
