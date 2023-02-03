@@ -33,11 +33,11 @@ type Casbin struct {
 //
 // The object is the current request's path and the action is the current request's method.
 // The subject that casbin requires is extracted by:
-// - SubjectExtractor
-// - casbin.Subject
-//  | set with casbin.SetSubject
-// - Context.User().GetUsername()
-//  | by a prior auth middleware through Context.SetUser.
+//   - SubjectExtractor
+//   - casbin.Subject
+//     | set with casbin.SetSubject
+//   - Context.User().GetUsername()
+//     | by a prior auth middleware through Context.SetUser.
 func New(e *casbin.Enforcer) *Casbin {
 	return &Casbin{
 		enforcer: e,

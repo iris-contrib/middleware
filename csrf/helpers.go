@@ -39,12 +39,11 @@ func UnsafeSkipCheck(ctx iris.Context) {
 //
 // Example:
 //
-//      // The following tag in our form.tmpl template:
-//      {{ .csrfField }}
+//	// The following tag in our form.tmpl template:
+//	{{ .csrfField }}
 //
-//      // ... becomes:
-//      <input type="hidden" name="csrf.token" value="<token>">
-//
+//	// ... becomes:
+//	<input type="hidden" name="csrf.token" value="<token>">
 func TemplateField(ctx iris.Context) template.HTML {
 	name := ctx.Values().GetString(formKey)
 	if name == "" {
