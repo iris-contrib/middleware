@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/casbin
 go 1.19
 
 require (
-	github.com/casbin/casbin/v2 v2.60.2
+	github.com/casbin/casbin/v2 v2.61.0
 	github.com/kataras/iris/v12 v12.2.0-beta7.0.20230202111503-bd04dea30d6f
 )
 
