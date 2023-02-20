@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/jwt
 go 1.19
 
 require (
-	github.com/golang-jwt/jwt/v4 v4.4.3
+	github.com/golang-jwt/jwt/v4 v4.5.0
 	github.com/kataras/iris/v12 v12.2.0-beta7.0.20230202111503-bd04dea30d6f
 )
 
