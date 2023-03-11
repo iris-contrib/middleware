@@ -7,7 +7,7 @@ import (
 	"github.com/iris-contrib/middleware/casbin"
 )
 
-// $ go get github.com/casbin/casbin/v2@v2.17.0
+// $ go get github.com/casbin/casbin/v2@v2.65.1
 // $ go run main.go
 
 func newApp() *iris.Application {

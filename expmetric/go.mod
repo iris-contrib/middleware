@@ -1,6 +1,6 @@
 module github.com/iris-contrib/middleware/expmetric
 
-go 1.19
+go 1.20
 
 require (
 	github.com/kataras/iris/v12 v12.2.0-beta7.0.20230202111503-bd04dea30d6f

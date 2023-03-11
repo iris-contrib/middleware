@@ -4,10 +4,10 @@ os:
   - linux
   - osx
 go:
-  - 1.19.3
+  - 1.20.3
 matrix:
   exclude:
-     [go: '1.19.3']
+     [go: '1.20.3']
 env:
  global:
    - GOPROXY=https://gocenter.io,https://goproxy.io,https://goproxy.cn,direct
