@@ -20,7 +20,7 @@ import "github.com/iris-contrib/middleware/zap"
 
 ## Example
 
-See the [example](_examples/example_1main.go).
+See the [example](_examples/example_1/main.go).
 
 ```go
 package main
