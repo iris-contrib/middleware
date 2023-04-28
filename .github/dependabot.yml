@@ -44,3 +44,7 @@ updates:
     directory: "/tollboothic"
     schedule:
       interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/zap"
+    schedule:
+      interval: "daily"

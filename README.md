@@ -46,6 +46,7 @@ Middleware is just a chain handlers which can be executed before or after the ma
 | [csrf](csrf)| Cross-Site Request Forgery Protection | [csrf/_example](csrf/_example/main.go) |
 | [throttler](throttler)| Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |
 | [expmetric](expmetric)| Expvar for counting requests etc. | [expmetric/_example](expmetric/_example/main.go) |
+| [zap](zap)| Provides log handling using zap package | [zap/_examples](zap/_examples/example_1/main.go) |
 
 ### Register a middleware
 
