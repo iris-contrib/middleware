@@ -34,7 +34,8 @@ Middleware is just a chain handlers which can be executed before or after the ma
 
 | Middleware      | Description | Example     |
 | ----------------|-------------|-------------|
-| [jwt](jwt) | JSON Web Tokens | [jwt](jwt) |
+| [pg](pg) | PostgreSQL Database | [pg/_examples](pg/_examples/) |
+| [jwt](jwt) | JSON Web Tokens | [jwt/_example](jwt/_example/) |
 | [cors](cors) | HTTP Access Control. | [cors/_example](cors/_example) |
 | [secure](secure) | Middleware that implements a few quick security wins | [secure/_example](secure/_example/main.go) |
 | [tollbooth](tollboothic) | Generic middleware to rate-limit HTTP requests | [tollboothic/_examples/limit-handler](tollboothic/_examples/limit-handler) |
