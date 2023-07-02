@@ -79,6 +79,7 @@ func New(schema *pg.Schema, opts Options) *PG {
 	if err != nil {
 		panic(err)
 	}
+	iris.RegisterOnInterrupt(db.Close)
 
 	if opts.CreateSchema {
 		if err = db.CreateSchema(ctx); err != nil {
@@ -107,6 +108,8 @@ func NewFromDB(db *pg.DB, opts Options) *PG {
 	if opts.getConnString() != "" {
 		panic("pg.NewFromDB: connection string is not supported")
 	}
+
+	iris.RegisterOnInterrupt(db.Close)
 
 	return &PG{
 		opts: opts,
@@ -190,4 +193,9 @@ func (p *PG) Handler() iris.Handler {
 	}
 
 	return handler
+}
+
+// Close calls the underlying *pg.DB.Close method.
+func (p *PG) Close() {
+	p.db.Close()
 }

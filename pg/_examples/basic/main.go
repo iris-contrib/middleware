@@ -16,7 +16,6 @@ func main() {
 	app := iris.New()
 
 	postgresMiddleware := newPostgresMiddleware()
-
 	{
 		customerAPI := app.Party("/api/customer", postgresMiddleware)
 		customerAPI.Post("/", createCustomer)
@@ -125,5 +124,6 @@ func newPostgresMiddleware() iris.Handler {
 	}
 
 	p := pg.New(schema, opts)
+	// OR pg.NewFromDB(db, pg.Options{Transactional: true})
 	return p.Handler()
 }
