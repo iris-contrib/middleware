@@ -20,6 +20,8 @@ func main() {
 		customerAPI := app.Party("/api/customer", postgresMiddleware)
 		customerAPI.Post("/", createCustomer)
 		customerAPI.Get("/{id:uuid}", getCustomer)
+		customerAPI.Put("/{id:uuid}", updateCustomer)
+		customerAPI.Delete("/{id:uuid}", deleteCustomer)
 	}
 
 	/*
@@ -100,6 +102,68 @@ func getCustomer(ctx iris.Context) {
 
 	// Display the retrieved Customer.
 	ctx.JSON(customer)
+}
+
+func updateCustomer(ctx iris.Context) {
+	// Get the id from the path parameter.
+	id := ctx.Params().Get("id")
+
+	var payload = struct {
+		Name string `json:"name"`
+	}{}
+	err := ctx.ReadJSON(&payload)
+	if err != nil {
+		ctx.StopWithError(iris.StatusBadRequest, err)
+		return
+	}
+
+	// Get the repository of Customer type through pg.Repository middleware package-level function.
+	customers := pg.Repository[Customer](ctx)
+
+	// Update the customer by the id and name.
+	customer := Customer{
+		ID:   id,
+		Name: payload.Name,
+	}
+
+	_, err = customers.UpdateOnlyColumns(ctx, []string{"name"}, customer)
+	if err != nil {
+		if pg.IsErrNoRows(err) {
+			ctx.StopWithStatus(iris.StatusNotFound)
+		} else {
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+		}
+
+		return
+	}
+
+	// Display a success message.
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(iris.Map{"message": "Customer updated successfully"})
+}
+
+func deleteCustomer(ctx iris.Context) {
+	// Get the id from the path parameter.
+	id := ctx.Params().Get("id")
+
+	// Get the repository of Customer type through pg.Repository middleware package-level function.
+	customers := pg.Repository[Customer](ctx)
+
+	// Delete the customer by the id.
+	_, err := customers.Delete(ctx, Customer{ID: id})
+	if err != nil {
+		if pg.IsErrNoRows(err) {
+			ctx.StopWithStatus(iris.StatusNotFound)
+		} else {
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+		}
+
+		return
+	}
+
+	// Display a success message.
+	ctx.StatusCode(iris.StatusOK)
+	ctx.JSON(iris.Map{"message": "Customer deleted successfully"})
 }
 
 func newPostgresMiddleware() iris.Handler {
