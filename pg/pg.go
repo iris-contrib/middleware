@@ -1,16 +1,21 @@
 package pg
 
 import (
-	"context"
+	stdContext "context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/context"
 	"github.com/kataras/pg"
 	pgxgolog "github.com/kataras/pgx-golog"
 )
+
+func init() {
+	context.SetHandlerName("github.com/iris-contrib/middleware/pg.*", "iris-contrib.pg")
+}
 
 // Options is the configuration for the PG middleware.
 // It is used to customize the connection to the database.
@@ -72,13 +77,14 @@ type PG struct {
 
 // New returns a new PG middleware instance.
 func New(schema *pg.Schema, opts Options) *PG {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := stdContext.WithTimeout(stdContext.Background(), 10*time.Second)
 	defer cancel()
 
 	db, err := pg.Open(ctx, schema, opts.getConnString(), opts.getConnectionOptions()...)
 	if err != nil {
 		panic(err)
 	}
+
 	iris.RegisterOnInterrupt(db.Close)
 
 	if opts.CreateSchema {

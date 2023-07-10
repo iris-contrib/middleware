@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/kataras/golog v0.1.9
 	github.com/kataras/iris/v12 v12.2.0
-	github.com/kataras/pg v1.0.2-0.20230706080350-374fd6b40f86
+	github.com/kataras/pg v1.0.2-0.20230710201451-179c9ea12601
 	github.com/kataras/pgx-golog v0.0.1
 )
 
