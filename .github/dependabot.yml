@@ -48,3 +48,7 @@ updates:
     directory: "/zap"
     schedule:
       interval: "daily"
+  - package-ecosystem: "gomod"
+    directory: "/pg"
+    schedule:
+      interval: "daily"
