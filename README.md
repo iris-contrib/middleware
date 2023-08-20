@@ -2,7 +2,7 @@
 
 <!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=master&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
 
-This repository provides a way to share community-based middlewares for [Iris v12.2.0+ (currently `master` branch)](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/v12/middleware).
+This repository provides a way to share community-based middlewares for [Iris Web Framework](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/main/middleware).
 
 ## Installation
 
@@ -11,7 +11,7 @@ Install a middleware, take for example the [jwt](jwt) one.
 ```sh
 $ go env -w GOPROXY=goproxy.cn,gocenter.io,goproxy.io,direct
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@master
+$ go get github.com/kataras/iris/v12@main
 $ go get github.com/iris-contrib/middleware/jwt@master
 ```
 
@@ -30,7 +30,7 @@ $ go build
 
 Middleware is just a chain handlers which can be executed before or after the main handler, can transfer data between handlers and communicate with third-party libraries, they are just functions.
 
-<!-- https://github.com/kataras/iris/blob/master/_examples/permissions/main.go -->
+<!-- https://github.com/kataras/iris/blob/main/_examples/permissions/main.go -->
 
 | Middleware      | Description | Example     |
 | ----------------|-------------|-------------|

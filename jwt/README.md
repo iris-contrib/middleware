@@ -1,6 +1,6 @@
 # JSON Web Tokens
 
-**Iris has its own builtin JWT middleware now** which is faster and supports payload encryption, it is compatible with the new `iris.User` interface, it can write and read Go structs or map as token claims and many **more features than the community edition one**. Please navigate to [kataras/iris/_examples/auth/jwt](https://github.com/kataras/iris/tree/master/_examples/auth/jwt) instead.
+**Iris has its own builtin JWT middleware now** which is faster and supports payload encryption, it is compatible with the new `iris.User` interface, it can write and read Go structs or map as token claims and many **more features than the community edition one**. Please navigate to [kataras/iris/_examples/auth/jwt](https://github.com/kataras/iris/tree/main/_examples/auth/jwt) instead.
 
 -----
 
