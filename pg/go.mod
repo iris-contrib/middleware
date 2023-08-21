@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/kataras/golog v0.1.9
 	github.com/kataras/iris/v12 v12.2.4
-	github.com/kataras/pg v1.0.3
+	github.com/kataras/pg v1.0.4
 	github.com/kataras/pgx-golog v0.0.1
 )
 
@@ -50,7 +50,7 @@ require (
 	github.com/yosssi/ace v0.0.5 // indirect
 	golang.org/x/crypto v0.12.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
-	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sync v0.3.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/time v0.3.0 // indirect

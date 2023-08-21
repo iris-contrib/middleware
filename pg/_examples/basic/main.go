@@ -12,18 +12,44 @@ type Customer struct {
 	Name string `json:"name" pg:"type=varchar(255)"`
 }
 
+func newPostgresMiddleware() iris.Handler {
+	schema := pg.NewSchema()
+	schema.MustRegister("customers", Customer{})
+
+	opts := pg.Options{
+		Host:          "localhost",
+		Port:          5432,
+		User:          "postgres",
+		Password:      "admin!123",
+		DBName:        "test_db",
+		Schema:        "public",
+		SSLMode:       "disable",
+		Transactional: true, // or false to disable the transactional feature.
+		Trace:         true, // or false to production to disable query logging.
+		CreateSchema:  true, // true to create the schema if it doesn't exist.
+		CheckSchema:   true, // true to check the schema for missing tables and columns.
+		ErrorHandler: func(ctx iris.Context, err error) {
+			ctx.StopWithError(iris.StatusInternalServerError, err)
+		},
+	}
+
+	p := pg.New(schema, opts)
+	// OR pg.NewFromDB(db, pg.Options{Transactional: true})
+	return p.Handler()
+}
+
 func main() {
 	app := iris.New()
 
 	postgresMiddleware := newPostgresMiddleware()
-	{
-		customerAPI := app.Party("/api/customer", postgresMiddleware)
-		customerAPI.Post("/", createCustomer)
-		customerAPI.Get("/{id:uuid}", getCustomer)
-		customerAPI.Put("/{id:uuid}", updateCustomer)
-		customerAPI.Delete("/{id:uuid}", deleteCustomer)
-	}
 
+	customerAPI := app.Party("/api/customer", postgresMiddleware)
+	customerAPI.Post("/", createCustomer)
+	customerAPI.Get("/{id:uuid}", getCustomer)
+	customerAPI.Put("/{id:uuid}", updateCustomer)
+	customerAPI.Delete("/{id:uuid}", deleteCustomer)
+
+	customerAPI.PartyConfigure("/")
 	/*
 		Create Customer:
 
@@ -164,30 +190,4 @@ func deleteCustomer(ctx iris.Context) {
 	// Display a success message.
 	ctx.StatusCode(iris.StatusOK)
 	ctx.JSON(iris.Map{"message": "Customer deleted successfully"})
-}
-
-func newPostgresMiddleware() iris.Handler {
-	schema := pg.NewSchema()
-	schema.MustRegister("customers", Customer{})
-
-	opts := pg.Options{
-		Host:          "localhost",
-		Port:          5432,
-		User:          "postgres",
-		Password:      "admin!123",
-		DBName:        "test_db",
-		Schema:        "public",
-		SSLMode:       "disable",
-		Transactional: true, // or false to disable the transactional feature.
-		Trace:         true, // or false to production to disable query logging.
-		CreateSchema:  true, // true to create the schema if it doesn't exist.
-		CheckSchema:   true, // true to check the schema for missing tables and columns.
-		ErrorHandler: func(ctx iris.Context, err error) {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		},
-	}
-
-	p := pg.New(schema, opts)
-	// OR pg.NewFromDB(db, pg.Options{Transactional: true})
-	return p.Handler()
 }

@@ -2,13 +2,17 @@ package pg
 
 import (
 	stdContext "context"
-	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/kataras/golog"
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v12/x/errors"
+
+	"github.com/kataras/golog"
+
 	"github.com/kataras/pg"
 	pgxgolog "github.com/kataras/pgx-golog"
 )
@@ -37,7 +41,9 @@ type Options struct {
 	CreateSchema  bool `yaml:"CreateSchema"`  // If true then schema will be created if not exists.
 	CheckSchema   bool `yaml:"CheckSchema"`   // If true then check the schema for missing tables and columns.
 	//
-	ErrorHandler func(ctx iris.Context, err error) // The error handler for the middleware.
+	// The error handler for the middleware.
+	// The implementation can ignore the error and return false to continue to the default error handler.
+	ErrorHandler func(ctx iris.Context, err error) bool
 }
 
 func (o *Options) getConnString() string {
@@ -58,12 +64,49 @@ func (o *Options) getConnectionOptions() []pg.ConnectionOption {
 	return opts
 }
 
-func (o *Options) handleError(ctx iris.Context, err error) {
-	if o.ErrorHandler != nil {
-		o.ErrorHandler(ctx, err)
+// DefaultErrorHandler is the default error handler for the PG middleware.
+var DefaultErrorHandler = func(ctx iris.Context, err error) bool {
+	if _, ok := pg.IsErrDuplicate(err); ok {
+		errors.AlreadyExists.Details(ctx, "resource already exists", err.Error())
+	} else if _, ok = pg.IsErrInputSyntax(err); ok {
+		errors.InvalidArgument.Err(ctx, err)
+	} else if errors.Is(err, pg.ErrNoRows) {
+		errors.NotFound.Details(ctx, "resource not found", err.Error())
+	} else if _, ok = pg.IsErrForeignKey(err); ok {
+		errors.InvalidArgument.Message(ctx, "reference entity does not exist")
+	} else if errors.Is(err, strconv.ErrSyntax) {
+		errors.InvalidArgument.Err(ctx, err)
+	} else if _, ok = pg.IsErrInputSyntax(err); ok {
+		errors.InvalidArgument.Err(ctx, err)
+	} else if vErrs, ok := errors.AsValidationErrors(err); ok {
+		errors.InvalidArgument.Data(ctx, "validation failure", vErrs)
+	} else if errMsg := err.Error(); strings.Contains(errMsg, "syntax error in") ||
+		strings.Contains(errMsg, "invalid input syntax") {
+		if strings.Contains(errMsg, "invalid input syntax for type uuid") {
+			errors.InvalidArgument.Err(ctx, err)
+		} else {
+			errors.InvalidArgument.Details(ctx, "invalid syntax", errMsg)
+		}
 	} else {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
+		errors.Internal.Err(ctx, err)
 	}
+
+	return true
+}
+
+func (o *Options) handleError(ctx iris.Context, err error) bool {
+	if err == nil {
+		return false
+	}
+
+	if o.ErrorHandler != nil {
+		if o.ErrorHandler(ctx, err) {
+			return true
+		}
+	}
+
+	// If error handler is not registered or returned false, call the default one.
+	return DefaultErrorHandler(ctx, err)
 }
 
 // PG is the PG middleware.
@@ -85,7 +128,7 @@ func New(schema *pg.Schema, opts Options) *PG {
 		panic(err)
 	}
 
-	iris.RegisterOnInterrupt(db.Close)
+	// iris.RegisterOnInterrupt(db.Close)
 
 	if opts.CreateSchema {
 		if err = db.CreateSchema(ctx); err != nil {
@@ -115,12 +158,22 @@ func NewFromDB(db *pg.DB, opts Options) *PG {
 		panic("pg.NewFromDB: connection string is not supported")
 	}
 
-	iris.RegisterOnInterrupt(db.Close)
+	// iris.RegisterOnInterrupt(db.Close)
 
 	return &PG{
 		opts: opts,
 		db:   db,
 	}
+}
+
+// GetDB returns the underlying *pg.DB instance.
+func (p *PG) GetDB() *pg.DB {
+	return p.db
+}
+
+// Close calls the underlying *pg.DB.Close method.
+func (p *PG) Close() {
+	p.db.Close()
 }
 
 const dbContextKey = "iris.contrib.pgdb"
@@ -199,9 +252,4 @@ func (p *PG) Handler() iris.Handler {
 	}
 
 	return handler
-}
-
-// Close calls the underlying *pg.DB.Close method.
-func (p *PG) Close() {
-	p.db.Close()
 }
