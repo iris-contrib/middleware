@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/zap
 go 1.21
 
 require (
-	github.com/kataras/iris/v12 v12.2.4
+	github.com/kataras/iris/v12 v12.2.5
 	go.uber.org/zap v1.25.0
 )
 

@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/prometheus
 go 1.21
 
 require (
-	github.com/kataras/iris/v12 v12.2.4
+	github.com/kataras/iris/v12 v12.2.5
 	github.com/prometheus/client_golang v1.16.0
 )
 

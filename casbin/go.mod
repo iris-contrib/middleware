@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/casbin/casbin/v2 v2.75.0
-	github.com/kataras/iris/v12 v12.2.4
+	github.com/kataras/iris/v12 v12.2.5
 )
 
 require (

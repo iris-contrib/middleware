@@ -2,7 +2,7 @@ module github.com/iris-contrib/middleware/secure
 
 go 1.21
 
-require github.com/kataras/iris/v12 v12.2.4
+require github.com/kataras/iris/v12 v12.2.5
 
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect

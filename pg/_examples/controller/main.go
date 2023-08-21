@@ -44,9 +44,11 @@ func newPG() *pg.PG {
 
 func main() {
 	app := iris.New()
+	app.Logger().SetLevel("debug")
+
 	pgMiddleware := newPG()
 
-	customerController := pg.NewEntityController[Customer, string](pgMiddleware)
+	customerController := pg.NewEntityController[Customer](pgMiddleware)
 	app.PartyConfigure("/api/customer", customerController)
 
 	app.Listen(":8080")
