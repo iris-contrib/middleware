@@ -47,9 +47,15 @@ func main() {
 	app.Logger().SetLevel("debug")
 
 	pgMiddleware := newPG()
+	defer pgMiddleware.Close()
 
-	customerController := pg.NewEntityController[Customer](pgMiddleware)
+	customerController := pg.NewEntityController[Customer](pgMiddleware) // .WithoutSchemaRoute()
 	app.PartyConfigure("/api/customer", customerController)
 
+	// GET /api/customer/schema
+	// GET /api/customer/{id}
+	// POST /api/customer
+	// PUT /api/customer
+	// DELETE /api/customer/{id}
 	app.Listen(":8080")
 }

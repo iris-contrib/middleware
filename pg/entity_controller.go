@@ -2,9 +2,12 @@ package pg
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
 
 	"github.com/kataras/iris/v12"
 	"github.com/kataras/iris/v12/x/errors"
+	"github.com/kataras/iris/v12/x/jsonx"
 
 	"github.com/kataras/pg"
 	"github.com/kataras/pg/desc"
@@ -23,10 +26,14 @@ import (
 // - DELETE /{id} - deletes an entity by ID.
 // The {id} parameter is the entity ID. It can be a string, int, uint, uuid, etc.
 type EntityController[T any] struct {
+	iris.Singleton
+
 	repository *pg.Repository[T]
 
 	tableName      string
 	primaryKeyType desc.DataType
+
+	disableSchemaRoute bool
 
 	// GetID returns the entity ID for GET/{id} and DELETE/{id} paths from the request Context.
 	GetID func(ctx iris.Context) any
@@ -34,6 +41,10 @@ type EntityController[T any] struct {
 	// ErrorHandler defaults to the PG's error handler. It can be customized for this controller.
 	// Setting this to nil will panic the application on the first error.
 	ErrorHandler func(ctx iris.Context, err error) bool
+
+	// AfterPayloadRead is called after the payload is read.
+	// It can be used to validate the payload or set default fields based on the request Context.
+	AfterPayloadRead func(ctx iris.Context, payload T) (T, bool)
 }
 
 // NewEntityController returns a new EntityController[T].
@@ -41,7 +52,6 @@ type EntityController[T any] struct {
 //
 // Read the type's documentation for more information.
 func NewEntityController[T any](middleware *PG) *EntityController[T] {
-
 	repo := pg.NewRepository[T](middleware.GetDB())
 	errorHandler := middleware.opts.handleError
 
@@ -51,16 +61,21 @@ func NewEntityController[T any](middleware *PG) *EntityController[T] {
 		panic(fmt.Sprintf("pg: entity %s does not have a primary key", td.Name))
 	}
 
-	return &EntityController[T]{
+	controller := &EntityController[T]{
 		repository:     repo,
 		tableName:      td.Name,
 		primaryKeyType: primaryKey.Type,
 		ErrorHandler:   errorHandler,
 	}
+
+	return controller
 }
 
-// Singleton returns true as this controller is a singleton.
-func (c *EntityController[T]) Singleton() bool { return true }
+// WithoutSchemaRoute disables the GET /schema route.
+func (c *EntityController[T]) WithoutSchemaRoute() *EntityController[T] {
+	c.disableSchemaRoute = true
+	return c
+}
 
 // Configure registers the controller's routes.
 // It is called automatically by the Iris API Builder when registered to the Iris Application.
@@ -92,6 +107,11 @@ func (c *EntityController[T]) Configure(r iris.Party) {
 		}
 	}
 
+	if !c.disableSchemaRoute {
+		jsonSchema := newJSONSchema[T](c.repository.Table())
+		r.Get("/schema", c.getSchema(jsonSchema))
+	}
+
 	r.Post("/", c.create)
 	r.Put("/", c.update)
 	r.Get(idParam, c.get)
@@ -112,11 +132,123 @@ func (c *EntityController[T]) readPayload(ctx iris.Context) (T, bool) {
 	var payload T
 	err := ctx.ReadJSON(&payload)
 	if err != nil {
-		errors.InvalidArgument.Details(ctx, "unable to parse body", err.Error())
+		if vErrs, ok := errors.AsValidationErrors(err); ok {
+			errors.InvalidArgument.Data(ctx, "validation failure", vErrs)
+		} else {
+			errors.InvalidArgument.Details(ctx, "unable to parse body", err.Error())
+		}
 		return payload, false
 	}
 
+	if c.AfterPayloadRead != nil {
+		return c.AfterPayloadRead(ctx, payload)
+	}
+
 	return payload, true
+}
+
+type jsonSchema[T any] struct {
+	Description string                `json:"description,omitempty"`
+	Types       []jsonSchemaFieldType `json:"types,omitempty"`
+	Fields      []jsonSchemaField     `json:"fields"`
+}
+
+type jsonSchemaFieldType struct {
+	Type     string   `json:"type"`
+	Examples []string `json:"examples,omitempty"`
+}
+
+type jsonSchemaField struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Type        string `json:"type"`
+	DataType    string `json:"data_type"`
+	Required    bool   `json:"required"`
+}
+
+func getJSONTag(v interface{}, fieldIndex []int) (string, bool) {
+	t := reflect.TypeOf(v)
+	f := t.FieldByIndex(fieldIndex)
+	jsonTag := f.Tag.Get("json")
+	if jsonTag == "" {
+		return "", false
+	}
+
+	return strings.Split(jsonTag, ",")[0], true
+}
+
+func newJSONSchema[T any](td *desc.Table) *jsonSchema[T] {
+	var fieldTypes []jsonSchemaFieldType
+	seenFieldTypes := make(map[reflect.Type]struct{})
+
+	var t T
+	fields := make([]jsonSchemaField, 0, len(td.Columns))
+	for _, col := range td.Columns {
+		fieldName, ok := getJSONTag(t, col.FieldIndex)
+		if !ok {
+			fieldName = col.Name
+		}
+
+		// Get the field type examples.
+		if _, seen := seenFieldTypes[col.FieldType]; !seen {
+			seenFieldTypes[col.FieldType] = struct{}{}
+
+			colValue := reflect.New(col.FieldType).Interface()
+			if exampler, ok := colValue.(jsonx.Exampler); ok {
+				exampleValues := exampler.ListExamples()
+				fieldTypes = append(fieldTypes, jsonSchemaFieldType{
+					Type:     col.FieldType.String(),
+					Examples: exampleValues,
+				})
+			}
+
+			/*
+				if m, ok := col.FieldType.MethodByName("Examples"); ok {
+					var returnValues []reflect.Value
+					if col.FieldType.Kind() == reflect.Ptr {
+						returnValues = m.Func.Call([]reflect.Value{newColFieldValue})
+					} else {
+						returnValues = m.Func.Call([]reflect.Value{newColFieldValue.Elem()})
+					}
+
+					if len(returnValues) > 0 && returnValues[0].CanInterface() {
+						v := returnValues[0].Interface()
+						if v != nil {
+							if exampleValues, ok := v.([]string); ok {
+								fieldTypes = append(fieldTypes, jsonSchemaFieldType{
+									Type:     col.FieldType.String(),
+									Examples: exampleValues,
+								})
+							}
+						}
+					}
+				}
+			*/
+		}
+
+		field := jsonSchemaField{
+			// Here we want the json tag name, not the column name.
+			Name:        fieldName,
+			Description: col.Description,
+			Type:        col.FieldType.String(),
+			DataType:    col.Type.String(),
+			Required:    !col.Nullable,
+		}
+
+		fields = append(fields, field)
+	}
+
+	return &jsonSchema[T]{
+		Description: td.Description,
+		Types:       fieldTypes,
+		Fields:      fields,
+	}
+}
+
+func (c *EntityController[T]) getSchema(s *jsonSchema[T]) iris.Handler {
+	return func(ctx iris.Context) {
+		ctx.JSON(s)
+	}
 }
 
 type idPayload struct {
