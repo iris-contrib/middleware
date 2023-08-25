@@ -154,8 +154,8 @@ type jsonSchema[T any] struct {
 }
 
 type jsonSchemaFieldType struct {
-	Type     string   `json:"type"`
-	Examples []string `json:"examples,omitempty"`
+	Name    string `json:"name"`
+	Example any    `json:"examples,omitempty"`
 }
 
 type jsonSchemaField struct {
@@ -197,8 +197,8 @@ func newJSONSchema[T any](td *desc.Table) *jsonSchema[T] {
 			if exampler, ok := colValue.(jsonx.Exampler); ok {
 				exampleValues := exampler.ListExamples()
 				fieldTypes = append(fieldTypes, jsonSchemaFieldType{
-					Type:     col.FieldType.String(),
-					Examples: exampleValues,
+					Name:    col.FieldType.String(),
+					Example: exampleValues,
 				})
 			}
 
