@@ -20,6 +20,7 @@ import (
 // The T is the entity type (e.g. a custom type, Customer).
 //
 // The controller registers the following routes:
+// - GET /schema - returns the entity's JSON schema.
 // - POST / - creates a new entity.
 // - PUT / - updates an existing entity.
 // - GET /{id} - gets an entity by ID.
@@ -166,8 +167,11 @@ type jsonSchemaField struct {
 	Required    bool   `json:"required"`
 }
 
-func getJSONTag(v interface{}, fieldIndex []int) (string, bool) {
-	t := reflect.TypeOf(v)
+func getJSONTag(t reflect.Type, fieldIndex []int) (string, bool) {
+	if t.Kind() != reflect.Struct {
+		return "", false
+	}
+
 	f := t.FieldByIndex(fieldIndex)
 	jsonTag := f.Tag.Get("json")
 	if jsonTag == "" {
@@ -181,10 +185,9 @@ func newJSONSchema[T any](td *desc.Table) *jsonSchema[T] {
 	var fieldTypes []jsonSchemaFieldType
 	seenFieldTypes := make(map[reflect.Type]struct{})
 
-	var t T
 	fields := make([]jsonSchemaField, 0, len(td.Columns))
 	for _, col := range td.Columns {
-		fieldName, ok := getJSONTag(t, col.FieldIndex)
+		fieldName, ok := getJSONTag(col.Table.StructType, col.FieldIndex)
 		if !ok {
 			fieldName = col.Name
 		}
@@ -201,29 +204,6 @@ func newJSONSchema[T any](td *desc.Table) *jsonSchema[T] {
 					Example: exampleValues,
 				})
 			}
-
-			/*
-				if m, ok := col.FieldType.MethodByName("Examples"); ok {
-					var returnValues []reflect.Value
-					if col.FieldType.Kind() == reflect.Ptr {
-						returnValues = m.Func.Call([]reflect.Value{newColFieldValue})
-					} else {
-						returnValues = m.Func.Call([]reflect.Value{newColFieldValue.Elem()})
-					}
-
-					if len(returnValues) > 0 && returnValues[0].CanInterface() {
-						v := returnValues[0].Interface()
-						if v != nil {
-							if exampleValues, ok := v.([]string); ok {
-								fieldTypes = append(fieldTypes, jsonSchemaFieldType{
-									Type:     col.FieldType.String(),
-									Examples: exampleValues,
-								})
-							}
-						}
-					}
-				}
-			*/
 		}
 
 		field := jsonSchemaField{
