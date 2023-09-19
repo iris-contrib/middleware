@@ -7,7 +7,7 @@ go 1.21
 require (
 	github.com/kataras/golog v0.1.9
 	github.com/kataras/iris/v12 v12.2.6-0.20230825084554-29637dad2a98
-	github.com/kataras/pg v1.0.6-0.20230825085926-436f8e98e65b
+	github.com/kataras/pg v1.0.6
 	github.com/kataras/pgx-golog v0.0.1
 )
 
@@ -50,11 +50,11 @@ require (
 	github.com/vmihailenco/msgpack/v5 v5.3.5 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/yosssi/ace v0.0.5 // indirect
-	golang.org/x/crypto v0.12.0 // indirect
+	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/net v0.14.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
