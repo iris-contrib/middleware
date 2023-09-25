@@ -156,7 +156,7 @@ type jsonSchema[T any] struct {
 
 type jsonSchemaFieldType struct {
 	Name    string `json:"name"`
-	Example any    `json:"examples,omitempty"`
+	Example any    `json:"example,omitempty"`
 }
 
 type jsonSchemaField struct {
