@@ -108,6 +108,7 @@ func (cs *cookieStore) Save(ctx iris.Context, token []byte) (err error) {
 	}
 
 	cookie := cs.options
+	cookie.Path = "/"
 	cookie.Value = value
 	// Set the Expires field on the cookie based on the MaxAge
 	// If MaxAge <= 0, we don't set the Expires attribute, making the cookie
