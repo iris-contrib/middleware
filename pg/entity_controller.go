@@ -133,11 +133,7 @@ func (c *EntityController[T]) readPayload(ctx iris.Context) (T, bool) {
 	var payload T
 	err := ctx.ReadJSON(&payload)
 	if err != nil {
-		if vErrs, ok := errors.AsValidationErrors(err); ok {
-			errors.InvalidArgument.Data(ctx, "validation failure", vErrs)
-		} else {
-			errors.InvalidArgument.Details(ctx, "unable to parse body", err.Error())
-		}
+		errors.HandleError(ctx, err)
 		return payload, false
 	}
 

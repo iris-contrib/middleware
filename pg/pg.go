@@ -78,8 +78,6 @@ var DefaultErrorHandler = func(ctx iris.Context, err error) bool {
 		errors.InvalidArgument.Err(ctx, err)
 	} else if _, ok = pg.IsErrInputSyntax(err); ok {
 		errors.InvalidArgument.Err(ctx, err)
-	} else if vErrs, ok := errors.AsValidationErrors(err); ok {
-		errors.InvalidArgument.Data(ctx, "validation failure", vErrs)
 	} else if errMsg := err.Error(); strings.Contains(errMsg, "syntax error in") ||
 		strings.Contains(errMsg, "invalid input syntax") {
 		if strings.Contains(errMsg, "invalid input syntax for type uuid") {
