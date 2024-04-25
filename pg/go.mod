@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/pg
 go 1.22
 
 require (
-	github.com/kataras/golog v0.1.11
+	github.com/kataras/golog v0.1.12
 	github.com/kataras/iris/v12 v12.2.11
 	github.com/kataras/pg v1.0.10-0.20240321132738-71b47b41e07e
 	github.com/kataras/pgx-golog v0.0.2-0.20240321133040-a3bb0897e2a3
