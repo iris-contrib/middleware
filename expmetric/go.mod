@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/kataras/iris/v12 v12.2.11
-	github.com/paulbellamy/ratecounter v0.2.0
+	github.com/paulbellamy/ratecounter v0.2.1-0.20240426100748-d814d5353a8e
 )
 
 require (
