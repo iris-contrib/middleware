@@ -43,6 +43,6 @@ func TestKeyValueStruct(t *testing.T) {
 
 	e := httptest.New(t, app)
 	e.GET("/test-prefix/path").Expect().Status(httptest.StatusOK).
-		ContentType("application/json").
-		Body().Equal(expectedResponseBody)
+		HasContentType("application/json").
+		Body().IsEqual(expectedResponseBody)
 }

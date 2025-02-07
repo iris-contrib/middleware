@@ -12,8 +12,6 @@ import (
 	"github.com/kataras/iris/v12"
 )
 
-type secureCtxKey string
-
 const (
 	stsHeader            = "Strict-Transport-Security"
 	stsSubdomainString   = "; includeSubDomains"

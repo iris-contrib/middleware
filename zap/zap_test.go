@@ -19,7 +19,7 @@ func buildDummyLogger() (*zap.Logger, *observer.ObservedLogs) {
 	return logger, obs
 }
 
-func timestampLocationCheck(t *testing.T, timestampStr string, location *time.Location) error {
+func timestampLocationCheck(timestampStr string, location *time.Location) error {
 	timestamp, err := time.Parse(time.RFC3339, timestampStr)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func TestNew(t *testing.T) {
 		t.Fatalf("logged path should be /test but %s", pathStr)
 	}
 
-	err := timestampLocationCheck(t, logLine.Context[7].String, time.UTC)
+	err := timestampLocationCheck(logLine.Context[7].String, time.UTC)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestNewWithConfig(t *testing.T) {
 		t.Fatalf("logged path should be /test but %s", pathStr)
 	}
 
-	err := timestampLocationCheck(t, logLine.Context[7].String, time.UTC)
+	err := timestampLocationCheck(logLine.Context[7].String, time.UTC)
 	if err != nil {
 		t.Fatal(err)
 	}

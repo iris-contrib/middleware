@@ -40,16 +40,16 @@ func TestCorsAllowOrigins(t *testing.T) {
 
 	// test origin empty.
 	r := e.GET("/").Expect().Status(httptest.StatusOK)
-	r.Body().Equal("GET: /")
+	r.Body().IsEqual("GET: /")
 	r.Headers().NotContainsKey("Access-Control-Allow-Origin").
 		NotContainsKey("Access-Control-Allow-Credentials").NotContainsKey("Access-Control-Expose-Headers")
 
 	// test allow.
 	r = e.GET("/").WithHeader("Origin", origin).Expect().Status(httptest.StatusOK)
-	r.Body().Equal("GET: /")
-	r.Header("Access-Control-Allow-Origin").Equal(origin)
+	r.Body().IsEqual("GET: /")
+	r.Header("Access-Control-Allow-Origin").IsEqual(origin)
 	r.Headers().NotContainsKey("Access-Control-Allow-Credentials")
-	r.Header("Access-Control-Expose-Headers").Equal("X-Header")
+	r.Header("Access-Control-Expose-Headers").IsEqual("X-Header")
 
 	// test disallow, note the "http" instead of "https".
 	r = e.GET("/").WithHeader("Origin", "http://iris-go.com").Expect().Status(httptest.StatusForbidden)
@@ -61,23 +61,23 @@ func TestCorsAllowOrigins(t *testing.T) {
 		WithHeader("Access-Control-Request-Method", "GET").
 		WithHeader("Access-Control-Request-Headers", "Content-Type").
 		Expect().Status(httptest.StatusOK)
-	r.Header("Vary").Equal("Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
-	r.Header("Access-Control-Allow-Origin").Equal(origin)
-	r.Header("Access-Control-Allow-Credentials").Empty()
+	r.Header("Vary").IsEqual("Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
+	r.Header("Access-Control-Allow-Origin").IsEqual(origin)
+	r.Header("Access-Control-Allow-Credentials").IsEmpty()
 	// Spec says: Since the list of methods can be unbounded, simply returning the method indicated
 	// by Access-Control-Request-Method (if supported) can be enough
-	r.Header("Access-Control-Allow-Methods").Equal("GET")
+	r.Header("Access-Control-Allow-Methods").IsEqual("GET")
 	// Spec says: Since the list of headers can be unbounded, simply returning supported headers
 	// from Access-Control-Request-Headers can be enough
-	r.Header("Access-Control-Allow-Headers").Equal("Content-Type")
-	r.Header("Access-Control-Max-Age").Equal("86400")
+	r.Header("Access-Control-Allow-Headers").IsEqual("Content-Type")
+	r.Header("Access-Control-Max-Age").IsEqual("86400")
 
 	// test no prefligh.
 	r = e.OPTIONS("/").WithHeader("Origin", "http://github.com").
 		WithHeader("Access-Control-Request-Method", "GET").Expect().Status(httptest.StatusForbidden)
-	r.Header("Access-Control-Allow-Origin").Empty()
-	r.Header("Access-Control-Allow-Credentials").Empty()
-	r.Header("Access-Control-Allow-Methods").Empty()
-	r.Header("Access-Control-Allow-Headers").Empty()
-	r.Header("Access-Control-Max-Age").Empty()
+	r.Header("Access-Control-Allow-Origin").IsEmpty()
+	r.Header("Access-Control-Allow-Credentials").IsEmpty()
+	r.Header("Access-Control-Allow-Methods").IsEmpty()
+	r.Header("Access-Control-Allow-Headers").IsEmpty()
+	r.Header("Access-Control-Max-Age").IsEmpty()
 }

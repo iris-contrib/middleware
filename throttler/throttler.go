@@ -43,7 +43,7 @@ type RateLimiter struct {
 
 	// Limiter is call for each request to determine whether the
 	// request is permitted and update internal state. It must be set.
-	RateLimiter throttled.RateLimiter
+	RateLimiter throttled.RateLimiterCtx
 
 	// VaryBy is called for each request to generate a key for the
 	// limiter. If it is nil, all requests use an empty string key.
@@ -60,7 +60,7 @@ type RateLimiter struct {
 // values in the RateLimitResult.
 func (t *RateLimiter) RateLimit(ctx iris.Context) {
 	if t.RateLimiter == nil {
-		t.error(ctx, errors.New("You must set a RateLimiter on RateLimiter"))
+		t.error(ctx, errors.New("you must set a RateLimiter on RateLimiter"))
 	}
 
 	var k string
@@ -68,7 +68,7 @@ func (t *RateLimiter) RateLimit(ctx iris.Context) {
 		k = t.VaryBy.Key(ctx.Request())
 	}
 
-	limited, context, err := t.RateLimiter.RateLimit(k, 1)
+	limited, context, err := t.RateLimiter.RateLimitCtx(ctx, k, 1)
 	if err != nil {
 		t.error(ctx, err)
 		return
