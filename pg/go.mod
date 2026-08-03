@@ -1,6 +1,6 @@
 module github.com/iris-contrib/middleware/pg
 
-go 1.25
+go 1.26
 
 require (
 	github.com/kataras/golog v0.1.12

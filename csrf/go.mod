@@ -1,6 +1,6 @@
 module github.com/iris-contrib/middleware/csrf
 
-go 1.25
+go 1.26
 
 require (
 	github.com/gorilla/securecookie v1.1.2

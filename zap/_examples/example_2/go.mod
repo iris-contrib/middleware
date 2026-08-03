@@ -1,6 +1,6 @@
 module example_2
 
-go 1.25
+go 1.26
 
 require (
 	github.com/iris-contrib/middleware/zap v0.0.0-20250207234507-372f6828ef8c

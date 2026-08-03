@@ -1,6 +1,6 @@
 module github.com/iris-contrib/middleware/tollboothic
 
-go 1.25
+go 1.26
 
 require (
 	github.com/didip/tollbooth/v6 v6.1.2
