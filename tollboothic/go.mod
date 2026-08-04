@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/didip/tollbooth/v6 v6.1.2
-	github.com/kataras/iris/v12 v12.2.11-0.20251225085559-d1a623769dfd
+	github.com/kataras/iris/v12 v12.2.11
 )
 
 require (
