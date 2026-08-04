@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	github.com/kataras/iris/v12 v12.2.11-0.20251225085559-d1a623769dfd
-	go.uber.org/zap v1.27.1
+	go.uber.org/zap v1.28.0
 )
 
 require (
