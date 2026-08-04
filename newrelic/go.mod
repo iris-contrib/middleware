@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/newrelic
 go 1.26
 
 require (
-	github.com/kataras/iris/v12 v12.2.11-0.20251225085559-d1a623769dfd
+	github.com/kataras/iris/v12 v12.2.11
 	github.com/newrelic/go-agent/v3 v3.42.0
 )
 
