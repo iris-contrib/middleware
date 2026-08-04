@@ -2,7 +2,7 @@ module github.com/iris-contrib/middleware/cors
 
 go 1.26
 
-require github.com/kataras/iris/v12 v12.2.11-0.20251225085559-d1a623769dfd
+require github.com/kataras/iris/v12 v12.2.11
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
