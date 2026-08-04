@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/throttler
 go 1.26
 
 require (
-	github.com/kataras/iris/v12 v12.2.11-0.20251225085559-d1a623769dfd
+	github.com/kataras/iris/v12 v12.2.11
 	github.com/throttled/throttled/v2 v2.15.0
 )
 
