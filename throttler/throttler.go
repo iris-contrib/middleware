@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/throttled/throttled/v2"
 )
@@ -98,20 +98,20 @@ func (t *RateLimiter) error(ctx iris.Context, err error) {
 
 func setRateLimitHeaders(ctx iris.Context, context throttled.RateLimitResult) {
 	if v := context.Limit; v >= 0 {
-		ctx.Header("X-RateLimit-Limit", strconv.Itoa(v))
+		ctx.SetHeaderOverride("X-RateLimit-Limit", strconv.Itoa(v))
 	}
 
 	if v := context.Remaining; v >= 0 {
-		ctx.Header("X-RateLimit-Remaining", strconv.Itoa(v))
+		ctx.SetHeaderOverride("X-RateLimit-Remaining", strconv.Itoa(v))
 	}
 
 	if v := context.ResetAfter; v >= 0 {
 		vi := int(math.Ceil(v.Seconds()))
-		ctx.Header("X-RateLimit-Reset", strconv.Itoa(vi))
+		ctx.SetHeaderOverride("X-RateLimit-Reset", strconv.Itoa(vi))
 	}
 
 	if v := context.RetryAfter; v >= 0 {
 		vi := int(math.Ceil(v.Seconds()))
-		ctx.Header("Retry-After", strconv.Itoa(vi))
+		ctx.SetHeaderOverride("Retry-After", strconv.Itoa(vi))
 	}
 }

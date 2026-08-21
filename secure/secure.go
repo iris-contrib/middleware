@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 const (
@@ -198,7 +198,7 @@ func (s *Secure) Serve(ctx iris.Context) {
 func addResponseHeaders(responseHeader http.Header, ctx iris.Context) {
 	for key, values := range responseHeader {
 		for _, value := range values {
-			ctx.Header(key, value)
+			ctx.SetHeaderOverride(key, value)
 		}
 	}
 }

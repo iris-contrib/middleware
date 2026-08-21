@@ -7,7 +7,7 @@ import (
 	"time"
 
 	iriszap "github.com/iris-contrib/middleware/zap"
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
@@ -51,12 +51,12 @@ func main() {
 
 	// Example ping request.
 	app.Get("/ping", func(ctx iris.Context) {
-		ctx.Header("X-Request-Id", "1234-5678-9012")
+		ctx.SetHeaderOverride("X-Request-Id", "1234-5678-9012")
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 
 	app.Post("/ping", func(ctx iris.Context) {
-		ctx.Header("X-Request-Id", "9012-5678-1234")
+		ctx.SetHeaderOverride("X-Request-Id", "9012-5678-1234")
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 

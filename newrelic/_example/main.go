@@ -5,7 +5,7 @@ import (
 	"os"
 
 	nriris "github.com/iris-contrib/middleware/newrelic"
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
@@ -25,7 +25,7 @@ func endpointChangeCode(ctx iris.Context) {
 }
 
 func endpointResponseHeaders(ctx iris.Context) {
-	ctx.ContentType("application/json")
+	ctx.SetContentType("application/json")
 	ctx.WriteString(`{"zip":"zap"}`)
 }
 
@@ -67,12 +67,12 @@ func main() {
 		ctx.WriteString("anonymous function handler")
 	})
 
-	v1 := router.Party("/v1")
+	v1 := router.Router("/v1")
 	v1.Get("/login", v1login)
 	v1.Get("/submit", v1submit)
 	v1.Get("/read", v1read)
 
-	router.OnErrorCode(404, endpointNotFound)
+	router.HandleNoRoute(endpointNotFound)
 
 	router.Listen(":8000")
 }

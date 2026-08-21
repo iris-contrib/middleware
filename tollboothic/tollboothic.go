@@ -2,8 +2,8 @@
 package tollboothic
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/didip/tollbooth/v6"
 	"github.com/didip/tollbooth/v6/limiter"
@@ -21,7 +21,7 @@ func LimitHandler(l *limiter.Limiter) iris.Handler {
 	return func(ctx iris.Context) {
 		httpError := tollbooth.LimitByRequest(l, ctx.ResponseWriter(), ctx.Request())
 		if httpError != nil {
-			ctx.ContentType(l.GetMessageContentType())
+			ctx.SetContentType(l.GetMessageContentType())
 			ctx.StatusCode(httpError.StatusCode)
 			ctx.WriteString(httpError.Message)
 			ctx.StopExecution()

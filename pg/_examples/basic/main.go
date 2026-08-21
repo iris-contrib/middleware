@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/iris-contrib/middleware/pg"
 )
@@ -28,8 +28,9 @@ func newPostgresMiddleware() iris.Handler {
 		Trace:         true, // or false to production to disable query logging.
 		CreateSchema:  true, // true to create the schema if it doesn't exist.
 		CheckSchema:   true, // true to check the schema for missing tables and columns.
-		ErrorHandler: func(ctx iris.Context, err error) {
+		ErrorHandler: func(ctx iris.Context, err error) bool {
 			ctx.StopWithError(iris.StatusInternalServerError, err)
+			return true
 		},
 	}
 
@@ -43,13 +44,13 @@ func main() {
 
 	postgresMiddleware := newPostgresMiddleware()
 
-	customerAPI := app.Party("/api/customer", postgresMiddleware)
+	customerAPI := app.Router("/api/customer", postgresMiddleware)
 	customerAPI.Post("/", createCustomer)
 	customerAPI.Get("/{id:uuid}", getCustomer)
 	customerAPI.Put("/{id:uuid}", updateCustomer)
 	customerAPI.Delete("/{id:uuid}", deleteCustomer)
 
-	customerAPI.PartyConfigure("/")
+	customerAPI.Router("/")
 	/*
 		Create Customer:
 
@@ -109,7 +110,7 @@ func createCustomer(ctx iris.Context) {
 
 func getCustomer(ctx iris.Context) {
 	// Get the id from the path parameter.
-	id := ctx.Params().Get("id")
+	id := ctx.Params().GetString("id")
 
 	// Get the repository of Customer type through pg.Repository middleware package-level function.
 	customers := pg.Repository[Customer](ctx)
@@ -132,7 +133,7 @@ func getCustomer(ctx iris.Context) {
 
 func updateCustomer(ctx iris.Context) {
 	// Get the id from the path parameter.
-	id := ctx.Params().Get("id")
+	id := ctx.Params().GetString("id")
 
 	var payload = struct {
 		Name string `json:"name"`
@@ -170,7 +171,7 @@ func updateCustomer(ctx iris.Context) {
 
 func deleteCustomer(ctx iris.Context) {
 	// Get the id from the path parameter.
-	id := ctx.Params().Get("id")
+	id := ctx.Params().GetString("id")
 
 	// Get the repository of Customer type through pg.Repository middleware package-level function.
 	customers := pg.Repository[Customer](ctx)

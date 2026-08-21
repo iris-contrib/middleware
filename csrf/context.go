@@ -3,7 +3,7 @@ package csrf
 import (
 	"fmt"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 func contextGet(ctx iris.Context, key string) (interface{}, error) {

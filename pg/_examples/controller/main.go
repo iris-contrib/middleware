@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/x/jsonx"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/rest/types"
 
 	"github.com/iris-contrib/middleware/pg"
 )
@@ -10,8 +10,8 @@ import (
 // The Customer database table model.
 type Customer struct {
 	ID        string        `json:"id" pg:"type=uuid,primary"`
-	CreatedAt jsonx.ISO8601 `pg:"type=timestamp,default=clock_timestamp()" json:"created_at,omitempty"`
-	UpdatedAt jsonx.ISO8601 `pg:"type=timestamp,default=clock_timestamp()" json:"updated_at,omitempty"`
+	CreatedAt types.ISO8601 `pg:"type=timestamp,default=clock_timestamp()" json:"created_at,omitempty"`
+	UpdatedAt types.ISO8601 `pg:"type=timestamp,default=clock_timestamp()" json:"updated_at,omitempty"`
 
 	Name string `json:"name" pg:"type=varchar(255)"`
 }
@@ -50,7 +50,7 @@ func main() {
 	defer pgMiddleware.Close()
 
 	customerController := pg.NewEntityController[Customer](pgMiddleware) // .WithoutSchemaRoute()
-	app.PartyConfigure("/api/customer", customerController)
+	app.Router("/api/customer", customerController)
 
 	// GET /api/customer/schema
 	// GET /api/customer/{id}

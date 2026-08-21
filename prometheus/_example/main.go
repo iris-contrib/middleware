@@ -4,7 +4,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	prometheusMiddleware "github.com/iris-contrib/middleware/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -16,7 +16,7 @@ func main() {
 
 	app.Use(m.ServeHTTP)
 
-	app.OnErrorCode(iris.StatusNotFound, func(ctx iris.Context) {
+	app.HandleNoRoute(func(ctx iris.Context) {
 		// error code handlers are not sharing the same middleware as other routes, so we have
 		// to call them inside their body.
 		m.ServeHTTP(ctx)

@@ -4,8 +4,8 @@ import (
 	"expvar"
 	"testing"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 type testJSONValue struct {
@@ -33,7 +33,7 @@ func TestKeyValueStruct(t *testing.T) {
 	)
 
 	handler := func(ctx iris.Context) {
-		ctx.ContentType("application/json")
+		ctx.SetContentType("application/json")
 
 		variable := expvar.Get("test-metric").String()
 		ctx.WriteString(variable)

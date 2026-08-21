@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/gorilla/securecookie"
 )

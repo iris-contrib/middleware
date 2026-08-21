@@ -3,7 +3,7 @@ package csrf
 import (
 	"net/http"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 // Options describes the configuration for the CRSF middleware.

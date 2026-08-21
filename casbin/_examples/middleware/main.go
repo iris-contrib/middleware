@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/middleware/basicauth"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/middleware/basicauth"
 
 	"github.com/iris-contrib/middleware/casbin"
 )

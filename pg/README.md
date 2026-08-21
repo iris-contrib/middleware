@@ -1,21 +1,19 @@
 # PG Middleware
 
-PG middleware is a package for [Iris](https://iris-go.com/) web framework that provides easy and type-safe access to PostgreSQL database.
+PG middleware is a package for the [Iris](https://iris-go.com/) web framework that provides easy and type-safe access to a PostgreSQL database.
 
 ## Features
 
 - Supports PostgreSQL 9.5 and above.
-- Uses [pg](https://github.com/kataras/pg) package and [pgx](https://github.com/jackc/pgx) driver under the hood.
+- Uses the [pg](https://github.com/kataras/pg) package and the [pgx](https://github.com/jackc/pgx) driver under the hood.
 - Supports transactions, schema creation and validation, query tracing and error handling.
-- Allows registering custom types and table models using a schema object.
+- Registers custom types and table models through a schema object.
 - Provides a generic repository interface for common CRUD operations.
 
 ## Installation
 
-To install PG middleware, use the following command:
-
 ```sh
-go get github.com/iris-contrib/middleware/pg@master
+go get github.com/iris-contrib/middleware/pg@main
 ```
 
 ## Usage
@@ -26,7 +24,7 @@ To use PG middleware, you need to:
 
 ```go
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/iris-contrib/middleware/pg"
 )
@@ -61,11 +59,12 @@ opts := pg.Options{
 	Schema:        "public",
 	SSLMode:       "disable",
 	Transactional: true, // or false to disable the transactional feature.
-	Trace:         true, // or false to production to disable query logging.
+	Trace:         true, // or false on production to disable query logging.
 	CreateSchema:  true, // true to create the schema if it doesn't exist.
 	CheckSchema:   true, // true to check the schema for missing tables and columns.
-	ErrorHandler: func(ctx iris.Context, err error) {
+	ErrorHandler: func(ctx iris.Context, err error) bool {
 		ctx.StopWithError(iris.StatusInternalServerError, err)
+		return true
 	},
 }
 
@@ -77,13 +76,11 @@ p := pg.New(schema, opts)
 ```go
 app := iris.New()
 
-postgresMiddleware := newPostgresMiddleware()
+postgresMiddleware := p.Handler()
 
-{
-	customerAPI := app.Party("/api/customer", postgresMiddleware)
-	customerAPI.Post("/", createCustomer)
-	customerAPI.Get("/{id:uuid}", getCustomer)
-}
+customerAPI := app.Router("/api/customer", postgresMiddleware)
+customerAPI.Post("/", createCustomer)
+customerAPI.Get("/{id:uuid}", getCustomer)
 ```
 
 6. Use the `pg.DB` or `pg.Repository` package-level functions to access the database instance or the repository interface in your handlers:
@@ -99,7 +96,7 @@ func createCustomer(ctx iris.Context) {
 		return
 	}
 
-	// Get the current database instance through pg.DB middleware package-level function.
+	// Get the current database instance through the pg.DB package-level function.
 	// db := pg.DB(ctx)
 	// [Work with db instance...]
 	// OR, initialize a new repository of Customer type and work with it (type-safety).
@@ -122,9 +119,9 @@ func createCustomer(ctx iris.Context) {
 
 func getCustomer(ctx iris.Context) {
 	// Get the id from the path parameter.
-	id := ctx.Params().Get("id")
+	id := ctx.Params().GetString("id")
 
-	// Get the repository of Customer type through pg.Repository middleware package-level function.
+	// Get the repository of Customer type through the pg.Repository package-level function.
 	customers := pg.Repository[Customer](ctx)
 
 	// Get the customer by the id.
@@ -146,7 +143,7 @@ func getCustomer(ctx iris.Context) {
 
 ## Examples
 
-You can find more examples of using PG middleware in the [examples](./examples) folder.
+You can find more examples of using PG middleware in the [_examples](./_examples) folder.
 
 ## License
 

@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 func TestCasbinRouter(t *testing.T) {

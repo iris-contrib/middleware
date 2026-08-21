@@ -5,7 +5,7 @@ import (
 	"time"
 
 	iriszap "github.com/iris-contrib/middleware/zap"
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 	"go.uber.org/zap"
 )
 

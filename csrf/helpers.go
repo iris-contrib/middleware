@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"html/template"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 // Token returns a masked CSRF token ready for passing into HTML template or

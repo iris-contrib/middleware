@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 )
 
 // cspHandler writes the nonce out as the response body.

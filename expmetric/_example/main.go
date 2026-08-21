@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/iris-contrib/middleware/expmetric"
 )
@@ -24,7 +24,7 @@ func main() {
 	// app.Get("/", expmetric.HitsPerMinute(), index)
 
 	// To capture hits per group of routes:
-	// usersRouter := app.Party("/users")
+	// usersRouter := app.Router("/users")
 	// usersRouter.Use(expmetric.HitsPerMinute())
 
 	// To register the middleware only on the below routes (e.g. / -> index):

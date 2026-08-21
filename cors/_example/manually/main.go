@@ -1,18 +1,18 @@
 package main
 
-import "github.com/kataras/iris/v12"
+import "github.com/kataras/iris/v14"
 
 func main() {
 	app := iris.New()
 
 	crs := func(ctx iris.Context) {
-		ctx.Header("Access-Control-Allow-Origin", "*")
-		ctx.Header("Access-Control-Allow-Credentials", "true")
+		ctx.SetHeaderOverride("Access-Control-Allow-Origin", "*")
+		ctx.SetHeaderOverride("Access-Control-Allow-Credentials", "true")
 
 		if ctx.Method() == iris.MethodOptions {
-			ctx.Header("Access-Control-Methods", "POST, PUT, PATCH, DELETE")
-			ctx.Header("Access-Control-Allow-Headers", "Access-Control-Allow-Origin,Content-Type")
-			ctx.Header("Access-Control-Max-Age", "86400")
+			ctx.SetHeaderOverride("Access-Control-Methods", "POST, PUT, PATCH, DELETE")
+			ctx.SetHeaderOverride("Access-Control-Allow-Headers", "Access-Control-Allow-Origin,Content-Type")
+			ctx.SetHeaderOverride("Access-Control-Max-Age", "86400")
 			ctx.StatusCode(iris.StatusNoContent)
 			return
 		}
@@ -22,11 +22,11 @@ func main() {
 
 	app.UseRouter(crs)
 	// OR per group of routes:
-	// api := app.Party("/api")
+	// api := app.Router("/api")
 	// api.AllowMethods(iris.MethodOptions) <- important for the preflight.
 	// api.Use(crs)
 
-	api := app.Party("/api")
+	api := app.Router("/api")
 	api.Post("/mailer", func(ctx iris.Context) {
 		var any iris.Map
 		err := ctx.ReadJSON(&any)
@@ -49,5 +49,5 @@ func main() {
 		ctx.WriteString("deleted")
 	})
 
-	app.Listen(":8080", iris.WithTunneling)
+	app.Listen(":8080")
 }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/didip/tollbooth/v6"
 	"github.com/iris-contrib/middleware/tollboothic"

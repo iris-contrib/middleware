@@ -6,8 +6,8 @@ import (
 
 	"github.com/iris-contrib/middleware/cors"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 func TestCorsAllowOrigins(t *testing.T) {
@@ -24,7 +24,7 @@ func TestCorsAllowOrigins(t *testing.T) {
 	app := iris.New()
 	app.UseRouter(cors.New(opts))
 	// OR per group of routes:
-	// v1 := app.Party("/v1")
+	// v1 := app.Router("/v1")
 	// v1.AllowMethods(iris.MethodOptions)
 	// v1.Use(cors.New(opts))
 

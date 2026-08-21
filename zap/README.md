@@ -1,6 +1,6 @@
 # zap
 
-Alternative logging through [zap](https://github.com/uber-go/zap) after the [#2125 feature request](https://github.com/kataras/iris/issues/2125). A clone of https://github.com/gin-contrib/zap.
+Request logging and panic recovery through [zap](https://github.com/uber-go/zap), after the [#2125 feature request](https://github.com/kataras/iris/issues/2125). A clone of https://github.com/gin-contrib/zap.
 
 ## Usage
 
@@ -9,7 +9,7 @@ Alternative logging through [zap](https://github.com/uber-go/zap) after the [#21
 Download and install it:
 
 ```sh
-go get github.com/iris-contrib/middleware/zap@master
+go get github.com/iris-contrib/middleware/zap@main
 ```
 
 Import it in your code:
@@ -30,7 +30,7 @@ import (
 	"time"
 
 	iriszap "github.com/iris-contrib/middleware/zap"
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 	"go.uber.org/zap"
 )
 
@@ -59,28 +59,26 @@ func main() {
 		panic("An unexpected error happen!")
 	})
 
-	// Listen and Server in 0.0.0.0:8080
+	// Listen and serve on 0.0.0.0:8080.
 	app.Listen(":8080")
 }
 ```
 
 ## Skip logging
 
-When you want to skip logging for specific path,
-please use `NewWithConfig`
+To skip logging for specific paths, use `NewWithConfig`:
 
 ```go
-
-app.Use(NewWithConfig(utcLogger, &Config{
+app.Use(iriszap.NewWithConfig(logger, &iriszap.Config{
   TimeFormat: time.RFC3339,
-  UTC: true,
-  SkipPaths: []string{"/no_log"},
+  UTC:        true,
+  SkipPaths:  []string{"/no_log"},
 }))
 ```
 
 ## Custom Zap fields
 
-Example for custom log request body, response request ID or log [Open Telemetry](https://opentelemetry.io/) TraceID.
+Example of logging the request body, the response request ID and the [OpenTelemetry](https://opentelemetry.io/) trace and span IDs. Full code at [example_2](_examples/example_2/main.go).
 
 ```go
 func main() {
@@ -120,16 +118,16 @@ func main() {
 
 	// Example ping request.
 	app.Get("/ping", func(ctx iris.Context) {
-		ctx.Header("X-Request-Id", "1234-5678-9012")
+		ctx.SetHeaderOverride("X-Request-Id", "1234-5678-9012")
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 
 	app.Post("/ping", func(ctx iris.Context) {
-		ctx.Header("X-Request-Id", "9012-5678-1234")
+		ctx.SetHeaderOverride("X-Request-Id", "9012-5678-1234")
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 
-	// Listen and Server in 0.0.0.0:8080
+	// Listen and serve on 0.0.0.0:8080.
 	app.Listen(":8080")
 }
 ```

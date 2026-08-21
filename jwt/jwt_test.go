@@ -12,8 +12,8 @@ package jwt
 import (
 	"testing"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/httptest"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/httptest"
 )
 
 type Response struct {

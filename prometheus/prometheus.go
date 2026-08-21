@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/prometheus/client_golang/prometheus"
 )

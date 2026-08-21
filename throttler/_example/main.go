@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/iris-contrib/middleware/throttler"
 
@@ -17,7 +17,7 @@ func main() {
 	app.Get("/", indexHandler)
 
 	middleware := newRateLimiterMiddleware(20)
-	limited := app.Party("/limited", middleware)
+	limited := app.Router("/limited", middleware)
 	{
 		limited.Get("/", limitedHandler)
 	}

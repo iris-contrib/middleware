@@ -5,8 +5,8 @@ import (
 
 	"github.com/newrelic/go-agent/v3/newrelic"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 )
 
 func init() {
@@ -52,9 +52,9 @@ func (w *replacementResponseWriter) Write(data []byte) (int, error) {
 	return w.ResponseWriter.Write(data)
 }
 
-func (w *replacementResponseWriter) FlushResponse() {
+func (w *replacementResponseWriter) Flush() {
 	w.flushHeader()
-	w.ResponseWriter.FlushResponse()
+	w.ResponseWriter.Flush()
 }
 
 // Context avoids making this package 1.7+ specific.
@@ -141,7 +141,7 @@ func middleware(app *newrelic.Application, useFullPath bool) iris.Handler {
 				replacement:    txn.SetWebResponse(w),
 				code:           http.StatusOK,
 			}
-			ctx.ResetResponseWriter(repl)
+			ctx.SetResponseWriter(repl)
 			defer repl.flushHeader()
 
 			ctx.Values().Set(TransactionContextKey, txn)

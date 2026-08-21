@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/golang-jwt/jwt/v4"
 )
@@ -132,7 +132,7 @@ func (m *Middleware) Serve(ctx iris.Context) {
 // FromAuthHeader is a "TokenExtractor" that takes a give context and extracts
 // the JWT token from the Authorization header.
 func FromAuthHeader(ctx iris.Context) (string, error) {
-	authHeader := ctx.GetHeader("Authorization")
+	authHeader := ctx.Header("Authorization")
 	if authHeader == "" {
 		return "", nil // No error, just no token
 	}
@@ -150,7 +150,7 @@ func FromAuthHeader(ctx iris.Context) (string, error) {
 // query string parameter
 func FromParameter(param string) TokenExtractor {
 	return func(ctx iris.Context) (string, error) {
-		return ctx.URLParam(param), nil
+		return ctx.Query().Get(param), nil
 	}
 }
 

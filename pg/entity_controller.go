@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/x/errors"
-	"github.com/kataras/iris/v12/x/jsonx"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/rest/errors"
+	"github.com/kataras/iris/v14/rest/types"
 
 	"github.com/kataras/pg"
 	"github.com/kataras/pg/desc"
@@ -27,7 +27,6 @@ import (
 // - DELETE /{id} - deletes an entity by ID.
 // The {id} parameter is the entity ID. It can be a string, int, uint, uuid, etc.
 type EntityController[T any] struct {
-	iris.Singleton
 
 	repository *pg.Repository[T]
 
@@ -80,7 +79,7 @@ func (c *EntityController[T]) WithoutSchemaRoute() *EntityController[T] {
 
 // Configure registers the controller's routes.
 // It is called automatically by the Iris API Builder when registered to the Iris Application.
-func (c *EntityController[T]) Configure(r iris.Party) {
+func (c *EntityController[T]) Routing(r iris.Router) {
 	idParamName := fmt.Sprintf("%s_id", c.tableName)
 	idParam := fmt.Sprintf("/{%s}", idParamName)
 
@@ -97,13 +96,14 @@ func (c *EntityController[T]) Configure(r iris.Party) {
 		c.GetID = func(ctx iris.Context) any {
 			switch c.primaryKeyType {
 			case desc.UUID, desc.CharacterVarying, desc.Text, desc.BitVarying, desc.CharacterArray:
-				return ctx.Params().Get(idParamName)
+				return ctx.Params().GetString(idParamName)
 			case desc.SmallInt:
-				return ctx.Params().GetIntDefault(idParamName, 0)
+				return ctx.Params().GetInt(idParamName)
 			case desc.Integer, desc.BigInt, desc.Serial, desc.SmallSerial, desc.BigSerial:
-				return ctx.Params().GetInt64Default(idParamName, 0)
+				return ctx.Params().GetInt64(idParamName)
 			default:
-				return ctx.Params().GetEntry(idParamName).Value()
+				entry, _ := ctx.Params().GetEntry(idParamName)
+				return entry.Value
 			}
 		}
 	}
@@ -193,7 +193,7 @@ func newJSONSchema[T any](td *desc.Table) *jsonSchema[T] {
 			seenFieldTypes[col.FieldType] = struct{}{}
 
 			colValue := reflect.New(col.FieldType).Interface()
-			if exampler, ok := colValue.(jsonx.Exampler); ok {
+			if exampler, ok := colValue.(types.Exampler); ok {
 				exampleValues := exampler.ListExamples()
 				fieldTypes = append(fieldTypes, jsonSchemaFieldType{
 					Name:    col.FieldType.String(),
@@ -285,7 +285,7 @@ func (c *EntityController[T]) update(ctx iris.Context) {
 	}
 
 	// patch-like.
-	onlyColumns := ctx.URLParamSlice("columns")
+	onlyColumns := ctx.Query().GetSlice("columns")
 
 	var (
 		n   int64
@@ -321,7 +321,7 @@ func (c *EntityController[T]) delete(ctx iris.Context) {
 	}
 
 	if !ok {
-		errors.NotFound.Details(ctx, "resource not found", err.Error())
+		errors.NotFound.Detail(ctx, "resource not found", err.Error())
 		return
 	}
 

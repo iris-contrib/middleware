@@ -11,7 +11,10 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/middleware/view"
+
+	"github.com/kataras/blocks"
 
 	"github.com/iris-contrib/middleware/csrf"
 )
@@ -19,7 +22,11 @@ import (
 func main() {
 	app := iris.New()
 	app.Logger().SetLevel("debug")
-	app.RegisterView(iris.Blocks("./views", ".html").Reload(true))
+	templates := blocks.New("./views").Reload(true)
+	if err := templates.Load(); err != nil {
+		panic(err)
+	}
+	app.UseRouter(view.Handler(templates))
 	CSRF := csrf.Protect(
 		// Note that the authentication key provided should be 32 bytes
 		// long and persist across application restarts.
@@ -44,7 +51,7 @@ func main() {
 		CSRF.Protect - is an iris Handler, the middleware: func(iris.Context)
 	*/
 
-	userAPI := app.Party("/user")
+	userAPI := app.Router("/user")
 	userAPI.Use(CSRF)
 	// To run this middleware on HTTP errors too:
 	// UseError(protect)
@@ -57,9 +64,9 @@ func main() {
 	// POST requests without a valid token will return a HTTP 403 Forbidden.
 	userAPI.Post("/signup", postSignupForm)
 
-	// Remove the CSRF middleware (1)
-	userAPI.Post("/unprotected", unprotected).
-		RemoveHandler(CSRF) // or RemoveHandler("iris-contrib.csrf.token")
+	// Routes that must skip the CSRF check are registered outside the guarded
+	// group, because a handler cannot be removed from a route in v14.
+	app.Post("/user/unprotected", unprotected)
 
 		/* Skip the CSRF check for a Party (2)
 		app.Use(func(ctx iris.Context){
@@ -81,11 +88,11 @@ func main() {
 func getSignupForm(ctx iris.Context) {
 	// views/user/signup.html just needs a {{ .csrfField }} template tag for
 	// csrf.TemplateField to inject the CSRF token into. Easy!
-	ctx.ViewData(csrf.TemplateTag, csrf.TemplateField(ctx))
-	ctx.View("user/signup")
+	view.KeyValue(ctx, csrf.TemplateTag, csrf.TemplateField(ctx))
+	view.Render(ctx, "user/signup", "", nil)
 
 	// We could also retrieve the token directly from csrf.Token(r) and
-	// set it in the request header - ctx.GetHeader("X-CSRF-Token", token)
+	// set it in the request header - ctx.SetHeaderOverride("X-CSRF-Token", token)
 	// This is useful if you're sending JSON to clients or a front-end JavaScript
 	// framework.
 }

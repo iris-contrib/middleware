@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
-	"github.com/kataras/iris/v12/x/errors"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
+	"github.com/kataras/iris/v14/rest/errors"
 
 	"github.com/kataras/golog"
 
@@ -67,11 +67,11 @@ func (o *Options) getConnectionOptions() []pg.ConnectionOption {
 // DefaultErrorHandler is the default error handler for the PG middleware.
 var DefaultErrorHandler = func(ctx iris.Context, err error) bool {
 	if _, ok := pg.IsErrDuplicate(err); ok {
-		errors.AlreadyExists.Details(ctx, "resource already exists", err.Error())
+		errors.AlreadyExists.Detail(ctx, "resource already exists", err.Error())
 	} else if _, ok = pg.IsErrInputSyntax(err); ok {
 		errors.InvalidArgument.Err(ctx, err)
 	} else if errors.Is(err, pg.ErrNoRows) {
-		errors.NotFound.Details(ctx, "resource not found", err.Error())
+		errors.NotFound.Detail(ctx, "resource not found", err.Error())
 	} else if _, ok = pg.IsErrForeignKey(err); ok {
 		errors.InvalidArgument.Message(ctx, "reference entity does not exist")
 	} else if errors.Is(err, strconv.ErrSyntax) {
@@ -83,7 +83,7 @@ var DefaultErrorHandler = func(ctx iris.Context, err error) bool {
 		if strings.Contains(errMsg, "invalid input syntax for type uuid") {
 			errors.InvalidArgument.Err(ctx, err)
 		} else {
-			errors.InvalidArgument.Details(ctx, "invalid syntax", errMsg)
+			errors.InvalidArgument.Detail(ctx, "invalid syntax", errMsg)
 		}
 	} else {
 		errors.Internal.Err(ctx, err)

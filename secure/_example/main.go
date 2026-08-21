@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/iris-contrib/middleware/secure"
 )
 
 // $ go get github.com/iris-contrib/middleware/secure@master
-// $ go get github.com/kataras/iris/v12@main
+// $ go get github.com/kataras/iris/v14@main
 func main() {
 	s := secure.New(secure.Options{
 		AllowedHosts:            []string{"ssl.example.com"},                                                                                                                         // AllowedHosts is a list of fully qualified domain names that are allowed. Default is empty list, which allows any and all host names.
@@ -35,9 +35,12 @@ func main() {
 		ctx.Writef("Hello from /home")
 	})
 
-	app.Listen(":8080",
-		// SSLProxyHeaders is set of header keys with associated values
-		// that would indicate a valid HTTPS request.
-		// Useful when using proxies like Nginx
-		iris.WithSSLProxyHeader("X-Forwarded-Proto", "https"))
+	// SSLProxyHeaders is a set of header keys with associated values
+	// that would indicate a valid HTTPS request.
+	// Useful when using proxies like Nginx.
+	app.EditOptions(func(opts *iris.Options) {
+		opts.Context.SSLProxyHeaders = map[string]string{"X-Forwarded-Proto": "https"}
+	})
+
+	app.Listen(":8080")
 }

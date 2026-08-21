@@ -4,16 +4,15 @@ CSRF is an Iris middleware that provides [cross-site request
 forgery](http://blog.codinghorror.com/preventing-csrf-and-xsrf-attacks/) (CSRF)
 protection. It includes:
 
-- The `csrf.Protect` middleware/handler provides CSRF protection on routes
-  attached to a router or a sub-router.
+- The `csrf.Protect` middleware/handler, which provides CSRF protection on
+  routes attached to a router or a sub-router.
 - A `csrf.Token` function that provides the token to pass into your response,
   whether that be a HTML form or a JSON response body.
-- ... and a `csrf.TemplateField` helper that you can pass into your `html/template`
-  templates to replace a `{{ .csrfField }}` template tag with a hidden input
-  field.
+- A `csrf.TemplateField` helper that you can pass into your templates to
+  replace a `{{ .csrfField }}` template tag with a hidden input field.
 
-> This repository is a highly customized fork of the amazing [gorilla/csrf](https://github.com/gorilla/csrf) package.
-> Unlike the gorilla/csrf, the iris-contrib csrf middleware provides a way to customize the tokens [Store](store.go) (defaults to `cookie store`) and also pass cookie options as the standard Go net/http package evolves, without any additional code from our side. Navigate to the [example](_example/main.go) for more.
+> This package is a highly customized fork of the [gorilla/csrf](https://github.com/gorilla/csrf) package.
+> Unlike gorilla/csrf, it lets you customize the token [Store](store.go) (defaults to a cookie store) and pass cookie options as the standard Go net/http package evolves, without extra code on our side. See the [example](_example/main.go).
 
 ## Contents
 
@@ -29,11 +28,10 @@ protection. It includes:
 ## Install
 
 ```sh
-go get github.com/iris-contrib/middleware/csrf@master
+go get github.com/iris-contrib/middleware/csrf@main
 ```
 
-CSRF is easy to use: add the middleware to your router with
-the below:
+Add the middleware to your router:
 
 ```go
 app := iris.New()
@@ -42,12 +40,12 @@ CSRF := csrf.Protect([]byte("32-byte-long-auth-key"))
 app.Use(CSRF)
 ```
 
-...and then collect the token with `csrf.Token(ctx)` in your handlers before
+...then collect the token with `csrf.Token(ctx)` in your handlers before
 passing it to the template, JSON body or HTTP header (see below).
 
-Note that the authentication key passed to `csrf.Protect([]byte(key))` should be
-**32-bytes long and persist across application restarts**. Generating a random key
-won't allow you to authenticate existing cookies and will break your CSRF
+The authentication key passed to `csrf.Protect([]byte(key))` should be
+**32 bytes long and persist across application restarts**. Generating a random
+key won't allow you to authenticate existing cookies and will break your CSRF
 validation.
 
 CSRF inspects the HTTP headers (first) and form body (second) on
@@ -55,85 +53,93 @@ subsequent POST/PUT/PATCH/DELETE/etc. requests for the token.
 
 ### HTML Forms
 
-Here's the common use-case: HTML forms you want to provide CSRF protection for,
-in order to protect malicious POST requests being made:
+Here's the common use-case: HTML forms you want to protect from malicious POST
+requests:
 
 ```go
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/middleware/view"
+
+	"github.com/kataras/blocks"
 
 	"github.com/iris-contrib/middleware/csrf"
 )
 
 func main() {
 	app := iris.New()
-	app.RegisterView(iris.HTML("./views", ".html"))
-    // All POST requests without a valid token will return HTTP 403 Forbidden.
-    // We should also ensure that our mutating (non-idempotent) handler only
-    // matches on POST requests. We can check that here, at the router level, or
-    // within the handler itself via r.Method.
-    userAPI := app.Party("/user")
-    CSRF := csrf.Protect(
-        // Note that the authentication key provided should be 32 bytes
-        // long and persist across application restarts.
-        []byte("9AB0F421E53A477C084477AEA06096F5"),
-        // WARNING: Set it to true on production with HTTPS.
-        csrf.Secure(false),
-    )
-    userAPI.Use(CSRF)
-    userAPI.Post("/signup", SubmitSignupForm)
-    userAPI.Get("/signup", ShowSignupForm)
 
-    app.Listen(":8080")
+	templates := blocks.New("./views").Reload(true)
+	if err := templates.Load(); err != nil {
+		panic(err)
+	}
+	app.UseRouter(view.Handler(templates))
+
+	CSRF := csrf.Protect(
+		// The authentication key must be 32 bytes long
+		// and persist across application restarts.
+		[]byte("9AB0F421E53A477C084477AEA06096F5"),
+		// WARNING: Set it to true on production with HTTPS.
+		csrf.Secure(false),
+	)
+
+	// All POST requests without a valid token return HTTP 403 Forbidden.
+	// We should also ensure that our mutating (non-idempotent) handler only
+	// matches on POST requests, here at the router level.
+	userAPI := app.Router("/user")
+	userAPI.Use(CSRF)
+	userAPI.Get("/signup", ShowSignupForm)
+	userAPI.Post("/signup", SubmitSignupForm)
+
+	app.Listen(":8080")
 }
 
 func ShowSignupForm(ctx iris.Context) {
-    // user/signup.html just needs a {{ .csrfField }} template tag for
-    // csrf.TemplateField to inject the CSRF token into. Easy!
-    ctx.ViewData(csrf.TemplateTag, csrf.TemplateField(ctx))
-    ctx.View("user/signup.html")
-    // We could also retrieve the token directly from csrf.Token(ctx) and
-    // set it in the request header - ctx.Header("X-CSRF-Token", token)
-    // This is useful if you're sending JSON to clients or a front-end JavaScript
-    // framework.
+	// views/user/signup.html just needs a {{ .csrfField }} template tag for
+	// csrf.TemplateField to inject the CSRF token into.
+	view.KeyValue(ctx, csrf.TemplateTag, csrf.TemplateField(ctx))
+	view.Render(ctx, "user/signup", "", nil)
+	// We could also retrieve the token directly from csrf.Token(ctx) and
+	// set it in a response header: ctx.SetHeaderOverride("X-CSRF-Token", token).
+	// This is useful if you're sending JSON to clients or a front-end
+	// JavaScript framework.
 }
 
 func SubmitSignupForm(ctx iris.Context) {
-    // We can trust that requests making it this far have satisfied
-    // our CSRF protection requirements.
+	// We can trust that requests making it this far have satisfied
+	// our CSRF protection requirements.
 }
 ```
 
-Note that the CSRF middleware will (by necessity) consume the request body if the
-token is passed via POST form values. If you need to consume this in your
-handler, insert your own middleware earlier in the chain to capture the request
-body.
+The CSRF middleware will (by necessity) consume the request body if the token
+is passed via POST form values. If you need to consume this in your handler,
+insert your own middleware earlier in the chain to capture the request body.
 
 ### JavaScript Applications
 
 This approach is useful if you're using a front-end JavaScript framework like
-React, Ember or Angular, and are providing a JSON API. Specifically, we need
-to provide a way for our front-end fetch/AJAX calls to pass the token on each
-fetch (AJAX/XMLHttpRequest) request. We achieve this by:
+React, Ember or Angular and are providing a JSON API. We need a way for the
+front-end fetch/AJAX calls to pass the token on each request. We achieve this
+by:
 
 - Parsing the token from the `<input>` field generated by the
   `csrf.TemplateField(ctx)` helper, or passing it back in a response header.
-- Sending this token back on every request
+- Sending this token back on every request.
 - Ensuring our cookie is attached to the request so that the form/header
   value can be compared to the cookie value.
 
 ```go
 func GetUser(ctx iris.Context) {
-    // Authenticate the request, get the id from the route params,
-    // and fetch the user from the DB, etc.
+	// Authenticate the request, get the id from the route params,
+	// and fetch the user from the DB, etc.
 
-    // Get the token and pass it in the CSRF header. Our JSON-speaking client
-    // or JavaScript framework can now read the header and return the token in
-    // in its own "X-CSRF-Token" request header on the subsequent POST.
-    ctx.Header("X-CSRF-Token", csrf.Token(ctx))
-    ctx.JSON(user)
+	// Get the token and pass it in the CSRF header. Our JSON-speaking client
+	// or JavaScript framework can now read the header and return the token
+	// in its own "X-CSRF-Token" request header on the subsequent POST.
+	ctx.SetHeaderOverride("X-CSRF-Token", csrf.Token(ctx))
+	ctx.JSON(user)
 }
 ```
 
@@ -165,8 +171,9 @@ try {
 }
 ```
 
-If you plan to host your JavaScript application on another domain, you can use the Trusted Origins
-feature to allow the host of your JavaScript application to make requests to your Go application. Observe the code snippet below:
+If you plan to host your JavaScript application on another domain, you can use
+the Trusted Origins feature to allow that host to make requests to your Go
+application:
 
 ```go
 CSRF := csrf.New(csrf.Options{
@@ -176,22 +183,25 @@ CSRF := csrf.New(csrf.Options{
 }).Protect
 ```
 
-On the example above, you're authorizing requests from `ui.domain.com` to make valid CSRF requests to your application, so you can have your API server on another domain without problems.
+The example above authorizes requests from `ui.domain.com` to make valid CSRF
+requests to your application; the API can live on a different domain than the
+UI without problems.
 
 ### Setting SameSite
 
-Go 1.11 introduced the option to set the SameSite attribute in cookies. This is
-valuable if a developer wants to instruct a browser to not include cookies during
-a cross site request. `SameSiteStrictMode` prevents all cross site requests from including
-the cookie. SameSiteLaxMode prevents CSRF prone requests (POST) from including the cookie
-but allows the cookie to be included in GET requests to support external linking.
+The SameSite cookie attribute instructs the browser to not include the cookie
+during a cross-site request. `SameSiteStrictMode` prevents all cross-site
+requests from including the cookie. `SameSiteLaxMode` prevents CSRF-prone
+requests (POST) from including the cookie but allows the cookie on GET
+requests, to support external linking.
 
 ```go
 import (
     "net/http"
 
-	"github.com/kataras/iris/v12"
-	"github.com/iris-contrib/middleware/csrf"
+    "github.com/kataras/iris/v14"
+
+    "github.com/iris-contrib/middleware/csrf"
 )
 
 func main() {
@@ -207,9 +217,9 @@ func main() {
 
 ### Setting Options
 
-What about providing your own error handler or store and changing the HTTP header the
-package inspects on requests? (i.e. an existing API you're porting to Go). Well,
-CSRF provides options for changing these as you see fit:
+What about providing your own error handler or store and changing the HTTP
+header the package inspects on requests? (i.e. an existing API you're porting
+to Go). CSRF provides options for changing these as you see fit:
 
 ```go
 CSRF := csrf.New(csrf.Options{
@@ -222,7 +232,7 @@ CSRF := csrf.New(csrf.Options{
 })
 ```
 
-The `CSRF.Filter` method.
+The `CSRF.Filter` method:
 
 ```go
 func access(ctx iris.Context) {
@@ -238,10 +248,11 @@ func access(ctx iris.Context) {
 OR use the `iris.NewConditionalHandler`:
 
 ```go
-app.Get(iris.NewConditionalHandler(CSRF.Filter, protectedHandler))
+app.Get("/protected", iris.NewConditionalHandler(CSRF.Filter, protectedHandler))
 ```
 
-The main `CSRF.Protect` method (same as `csrf.Protect` package-level function as we've seen in the previous examples).
+The main `CSRF.Protect` method (same as the `csrf.Protect` package-level
+function we've seen in the previous examples):
 
 ```go
 app.Use(CSRF.Protect)
@@ -264,16 +275,16 @@ Getting CSRF protection right is important, so here's some background:
 - Operates on a "whitelist only" approach where safe (non-mutating) HTTP methods
   (GET, HEAD, OPTIONS, TRACE) are the _only_ methods where token validation is not
   enforced.
-- The design is based on the battle-tested
+- The design follows the
   [Django](https://docs.djangoproject.com/en/1.8/ref/csrf/) and [Ruby on
   Rails](http://api.rubyonrails.org/classes/ActionController/RequestForgeryProtection.html)
   approaches.
 - Cookies are authenticated and based on the [securecookie](https://github.com/gorilla/securecookie)
   library. They're also Secure (issued over HTTPS only) and are HttpOnly
   by default, because sane defaults are important.
-- Cookie SameSite attribute (prevents cookies from being sent by a browser
-  during cross site requests) are not set by default to maintain backwards compatibility
-  for legacy systems. The SameSite attribute can be set with the SameSite option.
+- The cookie SameSite attribute (prevents cookies from being sent by a browser
+  during cross-site requests) is not set by default, to maintain backwards
+  compatibility for legacy systems. It can be set with the SameSite option.
 - Go's `crypto/rand` library is used to generate the 32 byte (256 bit) tokens
   and the one-time-pad used for masking them.
 

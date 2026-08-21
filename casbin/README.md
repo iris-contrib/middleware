@@ -2,16 +2,16 @@
 
 [Iris](https://github.com/kataras/iris) web framework's [casbin](https://github.com/casbin/casbin) middleware.
 
-The authorization determines a request based on `{subject, object, action}`. Please refer to [the Casbin's documentation](https://github.com/casbin/casbin) in order to understand how it works first.
+The authorization determines a request based on `{subject, object, action}`. Read [Casbin's documentation](https://github.com/casbin/casbin) first to understand how the model and policy files work.
 
 ```sh
 $ go get github.com/casbin/casbin/v2@latest
-$ go get github.com/iris-contrib/middleware/casbin@master
+$ go get github.com/iris-contrib/middleware/casbin@main
 ```
 
 ## Table of contents
 
-- [UseRouter, recommended as it provides the full casbin's functionalities](_examples/router/main.go)
-- [Use, register to a specific routes or parties](_examples/middleware/main.go)
+- [UseRouter: recommended, provides the full casbin functionality](_examples/router/main.go)
+- [Use: register to specific routes or routers](_examples/middleware/main.go)
 
-> Each example has its own model, configuration and its tests, please read them as well.
+> Each example has its own model, configuration and tests, please read them as well.

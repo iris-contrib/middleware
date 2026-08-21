@@ -1,8 +1,8 @@
 package casbin
 
 import (
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 
 	"github.com/casbin/casbin/v2"
 )

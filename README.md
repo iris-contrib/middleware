@@ -1,18 +1,27 @@
 # Iris Community Middleware List
 
-<!-- [![Build status](https://api.travis-ci.org/iris-contrib/middleware.svg?branch=master&style=flat-square)](https://travis-ci.org/iris-contrib/middleware) -->
+This repository holds community middlewares for the [Iris Web Framework](https://github.com/kataras/iris). The framework also ships its own: see the [builtin Iris middleware](https://github.com/kataras/iris/tree/main/middleware) before reaching for a community one.
 
-This repository provides a way to share community-based middlewares for [Iris Web Framework](https://github.com/kataras/iris). Among with those, you can also navigate through the [builtin Iris handlers](https://github.com/kataras/iris/tree/main/middleware).
+## Iris version
+
+These modules target **Iris v14** (`github.com/kataras/iris/v14`) on the `main`
+branch. The v12 line is preserved unchanged at the [`v12`](https://github.com/iris-contrib/middleware/tree/v12)
+tag; use that if your application has not migrated yet. The
+[migration guide](https://github.com/kataras/iris/blob/main/MIGRATION.md) covers the upgrade.
+
+Two modules here, `cors` and `jwt`, predate the framework's own. On v14 prefer
+the built-in [`middleware/cors`](https://github.com/kataras/iris/tree/main/middleware/cors)
+and [`middleware/jwt`](https://github.com/kataras/iris/tree/main/middleware/jwt),
+which are maintained with the framework.
 
 ## Installation
 
-Install a middleware, take for example the [jwt](jwt) one.
+Install a middleware, for example the [jwt](jwt) one:
 
 ```sh
-$ go env -w GOPROXY=goproxy.cn,gocenter.io,goproxy.io,direct
 $ go mod init myapp
-$ go get github.com/kataras/iris/v12@main
-$ go get github.com/iris-contrib/middleware/jwt@master
+$ go get github.com/kataras/iris/v14@latest
+$ go get github.com/iris-contrib/middleware/jwt@main
 ```
 
 **import as**
@@ -24,30 +33,29 @@ import "github.com/iris-contrib/middleware/jwt"
 ```
 
 **build**
+
 ```sh
 $ go build
 ```
 
-Middleware is just a chain handlers which can be executed before or after the main handler, can transfer data between handlers and communicate with third-party libraries, they are just functions.
-
-<!-- https://github.com/kataras/iris/blob/main/_examples/permissions/main.go -->
+A middleware is a plain `iris.Handler`. Handlers form a chain around the main route handler: each one can run code before or after the rest of the chain, share data through the context and talk to third-party libraries.
 
 | Middleware      | Description | Example     |
 | ----------------|-------------|-------------|
-| [pg](pg) | PostgreSQL Database | [pg/_examples](pg/_examples/) |
+| [pg](pg) | PostgreSQL database access with a generic repository | [pg/_examples](pg/_examples/) |
 | [jwt](jwt) | JSON Web Tokens | [jwt/_example](jwt/_example/) |
-| [cors](cors) | HTTP Access Control. | [cors/_example](cors/_example) |
-| [secure](secure) | Middleware that implements a few quick security wins | [secure/_example](secure/_example/main.go) |
+| [cors](cors) | HTTP access control | [cors/_example](cors/_example) |
+| [secure](secure) | A few quick security wins: security response headers | [secure/_example](secure/_example/main.go) |
 | [tollbooth](tollboothic) | Generic middleware to rate-limit HTTP requests | [tollboothic/_examples/limit-handler](tollboothic/_examples/limit-handler) |
-| [cloudwatch](cloudwatch) |  AWS cloudwatch metrics middleware |[cloudwatch/_example](cloudwatch/_example) |
+| [cloudwatch](cloudwatch) | AWS CloudWatch metrics | [cloudwatch/_example](cloudwatch/_example) |
 | [newrelic/v3](newrelic) | Official [New Relic Go Agent](https://github.com/newrelic/go-agent/tree/master/v3) | [newrelic/_example](newrelic/_example) |
-| [prometheus](prometheus)| Easily create metrics endpoint for the [prometheus](http://prometheus.io) instrumentation tool | [prometheus/_example](prometheus/_example) |
-| [casbin](casbin)| An authorization library that supports access control models like ACL, RBAC, ABAC | [casbin/_examples](casbin/_examples) |
-| [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris)| Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) | <!-- raven was deprecated by its company, the successor is sentry-go, they contain an Iris middleware. -->
-| [csrf](csrf)| Cross-Site Request Forgery Protection | [csrf/_example](csrf/_example/main.go) |
-| [throttler](throttler)| Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |
-| [expmetric](expmetric)| Expvar for counting requests etc. | [expmetric/_example](expmetric/_example/main.go) |
-| [zap](zap)| Provides log handling using zap package | [zap/_examples](zap/_examples/example_1/main.go) |
+| [prometheus](prometheus) | Metrics endpoint for the [Prometheus](http://prometheus.io) instrumentation tool | [prometheus/_example](prometheus/_example) |
+| [casbin](casbin) | Authorization with access control models: ACL, RBAC, ABAC | [casbin/_examples](casbin/_examples) |
+| [sentry-go (ex. raven)](https://github.com/getsentry/sentry-go/tree/master/iris) | Sentry client in Go | [sentry-go/example/iris](https://github.com/getsentry/sentry-go/blob/master/example/iris/main.go) |
+| [csrf](csrf) | Cross-site request forgery protection | [csrf/_example](csrf/_example/main.go) |
+| [throttler](throttler) | Rate limiting access to HTTP endpoints | [throttler/_example](throttler/_example/main.go) |
+| [expmetric](expmetric) | Expvar metrics, for counting requests etc. | [expmetric/_example](expmetric/_example/main.go) |
+| [zap](zap) | Request logging and panic recovery through [zap](https://github.com/uber-go/zap) | [zap/_examples](zap/_examples/example_1/main.go) |
 
 ### Register a middleware
 
@@ -66,66 +74,67 @@ func mySecondMiddleware(ctx iris.Context) { /* ... */ ctx.Next() }
 func mainHandler(ctx iris.Context) { /* ... */ }
 ```
 
-**To a party of routes or subdomain**
+**To a group of routes or a subdomain**
 
 ```go
-
-p := app.Party("/sellers", authMiddleware, logMiddleware)
-
+sellers := app.Router("/sellers", authMiddleware, logMiddleware)
 ```
 
 OR
 
 ```go
-p := app.Party("/customers")
-p.Use(logMiddleware)
+customers := app.Router("/customers")
+customers.Use(logMiddleware)
 ```
 
-**To all routes**
+**To all routes of the application, including the not-found and method-not-allowed handlers**
 
 ```go
-app.Use(func(ctx iris.Context) { }, myMiddleware2)
+app.Use(myMiddleware)
 ```
 
-**To global, all registered routes (including the http errors)**
+**To matched routes only**
 
 ```go
-app.UseGlobal(func(ctx iris.Context) { }, myMiddleware2)
+app.UseRelevant(myMiddleware)
 ```
 
-**To Party and its children, even on unmatched routes and errors**
+**Before the router itself, on every request**
 
 ```go
-app.UseRouter(func(ctx iris.Context) { }, myMiddleware2))
+app.UseRouter(myMiddleware)
 ```
 
-## Can I use standard net/http handler with iris?
+`UseRouter` handlers run even before routing, so they fire for every request that reaches the server. That is the place for CORS, panic recovery and access logs.
 
-**Yes** you can, just pass the Handler inside the `iris.FromStd` in order to be converted into iris.Handler and register it as you saw before.
+## Can I use a standard net/http handler with Iris?
 
-### Convert handler which has the form of `http.Handler/HandlerFunc`
+**Yes.** Pass the handler to `iris.FromStd` to convert it into an `iris.Handler` and register it as shown above.
+
+### Convert a handler of the form `http.Handler/HandlerFunc`
 
 ```go
 package main
 
 import (
-    "github.com/kataras/iris/v12"
+    "net/http"
+
+    "github.com/kataras/iris/v14"
 )
 
 func main() {
     app := iris.New()
 
-    sillyHTTPHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request){
-            println(r.RequestURI)
+    stdHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        println(r.RequestURI)
     })
 
-    sillyConvertedToIon := iris.FromStd(sillyHTTPHandler)
-    // FromStd can take (http.ResponseWriter, *http.Request, next http.Handler) too!
-    app.Use(sillyConvertedToIon)
+    // FromStd also accepts the
+    // func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) form.
+    app.Use(iris.FromStd(stdHandler))
 
     app.Listen(":8080")
 }
-
 ```
 
 ## Contributing

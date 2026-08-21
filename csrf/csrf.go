@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 )
 
 func init() {
@@ -174,7 +174,7 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 			// Fetch the Referer value. Call the error handler if it's empty or
 			// otherwise fails to parse.
 
-			referer, err := url.Parse(ctx.GetReferrer().String())
+			referer, err := url.Parse(ctx.Header("Referer"))
 			if err != nil || referer.String() == "" {
 				envError(ctx, ErrNoReferer)
 				return false
@@ -206,7 +206,7 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 	}
 
 	// Set the Vary: Cookie header to protect clients from caching the response.
-	ctx.Header("Vary", "Cookie")
+	ctx.SetHeader("Vary", "Cookie")
 	return true
 }
 
@@ -214,16 +214,16 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 // body or HTTP header. It will return nil if the token fails to decode.
 func (csrf *CSRF) RequestToken(ctx iris.Context) []byte {
 	// 1. Check the HTTP header first.
-	issued := ctx.GetHeader(csrf.opts.RequestHeader)
+	issued := ctx.Header(csrf.opts.RequestHeader)
 
 	// 2. Fall back to the POST (form) value.
 	if issued == "" {
-		issued = ctx.PostValue(csrf.opts.FieldName)
+		issued = ctx.PostForm().Get(csrf.opts.FieldName)
 	}
 
 	// 3. Finally, fall back to the multipart form (if set).
 	if issued == "" {
-		issued = ctx.FormValue(csrf.opts.FieldName)
+		issued = ctx.Form().Get(csrf.opts.FieldName)
 	}
 
 	// Decode the "issued" (pad + masked) token sent in the request. Return a

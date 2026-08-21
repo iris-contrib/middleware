@@ -3,8 +3,8 @@ package expmetric
 import (
 	"expvar"
 
-	"github.com/kataras/iris/v12"
-	"github.com/kataras/iris/v12/context"
+	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/context"
 )
 
 func init() {

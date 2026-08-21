@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v14"
 
 	"github.com/iris-contrib/middleware/cors"
 )
@@ -16,11 +16,11 @@ func main() {
 
 	app.UseRouter(crs)
 	// OR per group of routes:
-	// api := app.Party("/api")
+	// api := app.Router("/api")
 	// api.AllowMethods(iris.MethodOptions) <- important for the preflight.
 	// api.Use(crs)
 
-	api := app.Party("/api")
+	api := app.Router("/api")
 	api.Post("/mailer", func(ctx iris.Context) {
 		var any iris.Map
 		err := ctx.ReadJSON(&any)
@@ -43,5 +43,5 @@ func main() {
 		ctx.WriteString("deleted")
 	})
 
-	app.Listen(":8080", iris.WithTunneling)
+	app.Listen(":8080")
 }
