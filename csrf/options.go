@@ -6,9 +6,9 @@ import (
 	"github.com/kataras/iris/v14"
 )
 
-// Options describes the configuration for the CRSF middleware.
+// Options describes the configuration for the CSRF middleware.
 type Options struct {
-	// Store lets you configure the backend storage of the CRSF session.
+	// Store lets you configure the backend storage of the CSRF session.
 	Store Store
 	// FieldName allows you to change the name attribute of the hidden <input> field
 	// inspected by this package. The default is 'csrf.token'.
@@ -19,9 +19,10 @@ type Options struct {
 	// ErrorHandler allows you to change the handler called when CSRF request
 	// processing encounters an invalid token or request. A typical use would be to
 	// provide a handler that returns a static HTML file with a HTTP 403 status. By
-	// default a HTTP 403 status and a plain text CSRF failure reason are served.
+	// default a HTTP 403 status and a plain text CSRF failure reason are served,
+	// see UnauthorizedHandler.
 	//
-	// Note that a custom error handler can also access the csrf.FailureReason(r)
+	// Note that a custom error handler can also access the csrf.FailureReason(ctx)
 	// function to retrieve the CSRF validation reason from the request context.
 	ErrorHandler iris.Handler
 	// TrustedOrigins configures a set of origins (Referers) that are considered as trusted.
@@ -64,8 +65,8 @@ func HTTPOnly(httpOnly bool) CookieOption {
 	}
 }
 
-// SameSite sets the cookie SameSite attribute. Defaults to blank to maintain
-// backwards compatibility, however, Strict is recommended.
+// SameSite sets the cookie SameSite attribute. Defaults to DefaultSameSite,
+// which is Lax.
 //
 // SameSite(SameSiteStrictMode) will prevent the cookie from being sent by the
 // browser to the target site in all cross-site browsing context, even when

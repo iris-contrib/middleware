@@ -1,5 +1,15 @@
+# Updates are opened against the default branch, which is main.
+# target-branch is left out on purpose: setting it stops this file from
+# applying to Dependabot security updates.
 version: 2
 updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # One entry per Go module. Keep the list in step with
+  # .github/workflows/ci.yml and the README.
   - package-ecosystem: "gomod"
     directory: "/casbin"
     schedule:
@@ -29,6 +39,10 @@ updates:
     schedule:
       interval: "daily"
   - package-ecosystem: "gomod"
+    directory: "/pg"
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "gomod"
     directory: "/prometheus"
     schedule:
       interval: "daily"
@@ -48,7 +62,13 @@ updates:
     directory: "/zap"
     schedule:
       interval: "daily"
+
+  # The two examples that are Go modules of their own.
   - package-ecosystem: "gomod"
-    directory: "/pg"
+    directory: "/csrf/_example"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+  - package-ecosystem: "gomod"
+    directory: "/zap/_examples/example_2"
+    schedule:
+      interval: "weekly"

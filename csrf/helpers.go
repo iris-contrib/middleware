@@ -20,6 +20,10 @@ func Token(ctx iris.Context) string {
 // FailureReason makes CSRF validation errors available in the request context.
 // This is useful when you want to log the cause of the error or report it to
 // client.
+//
+// It is one of ErrNoReferer, ErrBadReferer, ErrNoToken and ErrBadToken, or the
+// error of the store or of the random source when the token could not be issued.
+// Report only the four named ones to the client.
 func FailureReason(ctx iris.Context) error {
 	return ctx.GetErr()
 }

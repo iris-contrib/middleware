@@ -44,6 +44,11 @@ type Options struct {
 	MaxAge int
 	// AllowCredentials indicates whether the request can include user credentials like
 	// cookies, HTTP authentication or client side SSL certificates.
+	//
+	// Together with an AllowedOrigins of "*" (or no AllowedOrigins at all) the
+	// middleware answers with the origin of the request instead of "*", because
+	// browsers refuse "*" with credentials. Every origin is then allowed to send
+	// credentialed requests. List the origins you trust instead.
 	AllowCredentials bool
 	// OptionsPassthrough instructs preflight to let other potential next handlers to
 	// process the OPTIONS method. Turn this on if your application handles OPTIONS.
@@ -81,7 +86,7 @@ type Cors struct {
 // Use the Application.UseRouter method to register it globally,
 // this is the best option as it enables all the middleware's features.
 // Or to register it per group of routes use:
-// the Party.AllowMethods(iris.MethodOptions) and Party.Use methods instead.
+// the Router.AllowMethods(iris.MethodOptions) and Router.Use methods instead.
 func New(options Options) iris.Handler {
 	c := &Cors{
 		exposedHeaders:    convert(options.ExposedHeaders, http.CanonicalHeaderKey),
@@ -160,6 +165,10 @@ func Default() iris.Handler {
 
 // AllowAll create a new Cors handler with permissive configuration allowing all
 // origins with all standard methods with any header and credentials.
+//
+// Every origin may then read the responses of credentialed requests, see
+// Options.AllowCredentials. Do not use it for an API that authenticates with
+// cookies or HTTP authentication.
 func AllowAll() iris.Handler {
 	return New(Options{
 		AllowedOrigins:   []string{"*"},
@@ -206,7 +215,7 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 		return
 	}
 	// Always set Vary headers.
-	ctx.SetHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
+	ctx.AddHeader("Vary", "Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
 
 	if origin == "" {
 		c.logf("  Preflight aborted: empty origin")
@@ -237,23 +246,23 @@ func (c *Cors) handlePreflight(ctx iris.Context) {
 		return
 	}
 	if c.allowedOriginsAll && !c.allowCredentials {
-		ctx.SetHeaderOverride("Access-Control-Allow-Origin", "*")
+		ctx.SetHeader("Access-Control-Allow-Origin", "*")
 	} else {
-		ctx.SetHeaderOverride("Access-Control-Allow-Origin", origin)
+		ctx.SetHeader("Access-Control-Allow-Origin", origin)
 	}
 	// Spec says: Since the list of methods can be unbounded, simply returning the method indicated
 	// by Access-Control-Request-Method (if supported) can be enough
-	ctx.SetHeaderOverride("Access-Control-Allow-Methods", strings.ToUpper(reqMethod))
+	ctx.SetHeader("Access-Control-Allow-Methods", strings.ToUpper(reqMethod))
 	if len(reqHeaders) > 0 {
 		// Spec says: Since the list of headers can be unbounded, simply returning supported headers
 		// from Access-Control-Request-Headers can be enough
-		ctx.SetHeaderOverride("Access-Control-Allow-Headers", strings.Join(reqHeaders, ", "))
+		ctx.SetHeader("Access-Control-Allow-Headers", strings.Join(reqHeaders, ", "))
 	}
 	if c.allowCredentials {
-		ctx.SetHeaderOverride("Access-Control-Allow-Credentials", "true")
+		ctx.SetHeader("Access-Control-Allow-Credentials", "true")
 	}
 	if c.maxAge > 0 {
-		ctx.SetHeaderOverride("Access-Control-Max-Age", strconv.Itoa(c.maxAge))
+		ctx.SetHeader("Access-Control-Max-Age", strconv.Itoa(c.maxAge))
 	}
 	c.logf("  Preflight response headers: %v", ctx.ResponseWriter().Header())
 }
@@ -270,7 +279,7 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 		return
 	}
 	// Always set Vary, see https://github.com/rs/cors/issues/10
-	ctx.ResponseWriter().Header().Add("Vary", "Origin")
+	ctx.AddHeader("Vary", "Origin")
 	if origin == "" && !c.allowedOriginsAll {
 		c.logf("  Actual request no headers added: missing origin")
 		return
@@ -294,15 +303,15 @@ func (c *Cors) handleActualRequest(ctx iris.Context) {
 		return
 	}
 	if c.allowedOriginsAll && !c.allowCredentials {
-		ctx.SetHeaderOverride("Access-Control-Allow-Origin", "*")
+		ctx.SetHeader("Access-Control-Allow-Origin", "*")
 	} else {
-		ctx.SetHeaderOverride("Access-Control-Allow-Origin", origin)
+		ctx.SetHeader("Access-Control-Allow-Origin", origin)
 	}
 	if len(c.exposedHeaders) > 0 {
-		ctx.SetHeaderOverride("Access-Control-Expose-Headers", strings.Join(c.exposedHeaders, ", "))
+		ctx.SetHeader("Access-Control-Expose-Headers", strings.Join(c.exposedHeaders, ", "))
 	}
 	if c.allowCredentials {
-		ctx.SetHeaderOverride("Access-Control-Allow-Credentials", "true")
+		ctx.SetHeader("Access-Control-Allow-Credentials", "true")
 	}
 	c.logf("  Actual response added headers: %v", ctx.ResponseWriter().Header())
 }

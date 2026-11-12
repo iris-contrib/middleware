@@ -9,8 +9,9 @@
 
 <body>
     <script type="text/javascript">
-        // Replace the "host" with your domain (you can use iris.WithTunneling).
-        const host = 'https://e1de7bc1.ngrok.io';
+        // The address of the API server, which is the cors example (../main.go).
+        // That example allows the origin of this page, http://localhost:9090.
+        const host = 'http://localhost:8080';
 
         async function postData(url = '', data = {}) {
             const response = await fetch(url, {

@@ -53,6 +53,8 @@ func main() {
 	}
 
 	router := iris.New()
+	// Use on the root application also runs for requests that match no route,
+	// so the HandleNoRoute handler below is instrumented as well.
 	router.Use(nriris.New(app))
 
 	router.Get("/404", endpoint404)

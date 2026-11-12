@@ -145,16 +145,20 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 		// yet, or it's the wrong length, generate a new token.
 		// Note that the new token will (correctly) fail validation downstream
 		// as it will no longer match the request token.
+		//
+		// A failure here is the server's, not the client's: the random source
+		// or the store did not work. It is stored as a private error, which
+		// FailureReason still returns and no error handler sends to the client.
 		realToken, err = generateRandomBytes(tokenLength)
 		if err != nil {
-			envError(ctx, err)
+			envError(ctx, iris.PrivateError(err))
 			return false
 		}
 
 		// Save the new (real) token in the session store.
 		err = opts.Store.Save(ctx, realToken)
 		if err != nil {
-			envError(ctx, err)
+			envError(ctx, iris.PrivateError(err))
 			return false
 		}
 	}
@@ -206,7 +210,7 @@ func (csrf *CSRF) Filter(ctx iris.Context) bool {
 	}
 
 	// Set the Vary: Cookie header to protect clients from caching the response.
-	ctx.SetHeader("Vary", "Cookie")
+	ctx.AddHeader("Vary", "Cookie")
 	return true
 }
 
@@ -237,7 +241,17 @@ func (csrf *CSRF) RequestToken(ctx iris.Context) []byte {
 }
 
 // UnauthorizedHandler sets a HTTP 403 Forbidden status and writes the
-// CSRF failure reason to the response.
+// CSRF failure reason to the response, for example "CSRF token invalid".
+//
+// The reason is written here because Iris v14 no longer renders a body for a
+// status code a handler sets, unless the application calls
+// EnableStatusCodeResponse. A failure of the store or of the random source
+// is stored as a private error and answers the status alone.
 func UnauthorizedHandler(ctx iris.Context) {
+	if public, err := ctx.ErrPublic(); public {
+		ctx.StopWithError(iris.StatusForbidden, err)
+		return
+	}
+
 	ctx.StopWithStatus(iris.StatusForbidden)
 }

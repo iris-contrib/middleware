@@ -17,7 +17,7 @@ func init() {
 	context.SetHandlerName("github.com/iris-contrib/middleware/cloudwatch.*", "iris-contrib.cloudwatch")
 }
 
-// PutMetricContextKey is the context key which the metrics are stored.
+// PutMetricContextKey is the context key under which the put func is stored.
 const PutMetricContextKey = "PUT_METRIC"
 
 // GetPutFunc returns the put func based on the context,
@@ -44,25 +44,31 @@ type AfterFunc func(iris.Context, time.Duration, *Cloudwatch)
 
 // Cloudwatch is the metrics handler.
 type Cloudwatch struct {
-	// CloudWatch underline Service
+	// Service is the CloudWatch client the default PutMetric sends through.
 	Service *cloudwatch.CloudWatch
 
-	// CloudWatch underline namespace
+	// Namespace is the CloudWatch namespace of every metric sent.
 	Namespace string
 
-	// Latency underlime metric name
+	// LatencyMetricName is the name of the request latency metric.
+	// Defaults to "Latency".
 	LatencyMetricName string
 
-	Before    BeforeFunc
-	After     AfterFunc
+	// Before runs before the rest of the chain. Defaults to DefaultBefore.
+	Before BeforeFunc
+	// After runs after the rest of the chain, with the time it took.
+	// Defaults to DefaultAfter.
+	After AfterFunc
+	// PutMetric sends the data. The default calls Service.PutMetricData
+	// and prints a failure to the standard output.
 	PutMetric func(data []*cloudwatch.MetricDatum)
 
-	// ExcludeURLs from logging
+	// ExcludeURLs lists the request paths that are served without metrics.
 	ExcludeURLs []string
 }
 
-// New retruns a new *Cloudwatch metrics middleware
-// call its ServeHTTP to adapt it on the chain.
+// New returns a new *Cloudwatch metrics middleware.
+// Register its ServeHTTP method as a handler.
 func New(region, namespace string) *Cloudwatch {
 	cw := &Cloudwatch{
 		Service:           cloudwatch.New(session.New(), aws.NewConfig().WithRegion(region).WithMaxRetries(5)),
@@ -106,39 +112,46 @@ func (cw *Cloudwatch) isExcludedURL(s string) bool {
 	return false
 }
 
+// ServeHTTP is the Iris handler of the middleware.
+// It runs Before, the rest of the chain and then After with the latency.
+// A request whose path is in ExcludeURLs goes straight to the rest of the chain.
 func (cw *Cloudwatch) ServeHTTP(ctx iris.Context) {
-	if cw.Before == nil {
-		cw.Before = DefaultBefore
-	}
-
-	if cw.After == nil {
-		cw.After = DefaultAfter
-	}
-	r := ctx.Request()
-
-	if ok := cw.isExcludedURL(r.URL.Path); ok {
+	if cw.isExcludedURL(ctx.Request().URL.Path) {
+		ctx.Next()
 		return
+	}
+
+	before, after := cw.Before, cw.After
+	if before == nil {
+		before = DefaultBefore
+	}
+
+	if after == nil {
+		after = DefaultAfter
 	}
 
 	start := time.Now()
 
-	cw.Before(ctx, cw)
+	before(ctx, cw)
 
 	ctx.Next()
 
 	latency := time.Since(start)
 
-	cw.After(ctx, latency, cw)
+	after(ctx, latency, cw)
 }
 
-// DefaultBefore is the default func assigned to *Cloudwatch.Before
+// DefaultBefore is the default func assigned to *Cloudwatch.Before.
+// It stores PutMetric on the Context, where GetPutFunc finds it.
 func DefaultBefore(ctx iris.Context, cw *Cloudwatch) {
 	ctx.Values().Set(PutMetricContextKey, cw.PutMetric)
 }
 
-// DefaultAfter is the default func assigned to *Cloudwatch.After
+// DefaultAfter is the default func assigned to *Cloudwatch.After.
+// It sends the request latency, in microseconds, with the request URI
+// and the client address as dimensions.
 func DefaultAfter(ctx iris.Context, latency time.Duration, cw *Cloudwatch) {
-	ms := float64(latency.Nanoseconds() * 1000)
+	us := float64(latency.Nanoseconds()) / float64(time.Microsecond)
 	cw.PutMetric([]*cloudwatch.MetricDatum{
 		{
 			MetricName: aws.String(cw.LatencyMetricName),
@@ -154,7 +167,7 @@ func DefaultAfter(ctx iris.Context, latency time.Duration, cw *Cloudwatch) {
 			},
 			Timestamp: aws.Time(time.Now()),
 			Unit:      aws.String("Microseconds"),
-			Value:     aws.Float64(ms),
+			Value:     aws.Float64(us),
 		},
 	})
 	ctx.Values().Remove(PutMetricContextKey)

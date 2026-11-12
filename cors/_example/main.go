@@ -10,7 +10,12 @@ func main() {
 	app := iris.New()
 
 	crs := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // allows everything, use that to change the hosts.
+		// The origins that may call this API from a browser: here the page
+		// that the client example serves. "*" allows every origin; do not
+		// combine it with AllowCredentials.
+		AllowedOrigins:   []string{"http://localhost:9090"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE"},
+		AllowedHeaders:   []string{"Content-Type"},
 		AllowCredentials: true,
 	})
 

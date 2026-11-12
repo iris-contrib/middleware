@@ -1,26 +1,22 @@
 # zap
 
-Request logging and panic recovery through [zap](https://github.com/uber-go/zap), after the [#2125 feature request](https://github.com/kataras/iris/issues/2125). A clone of https://github.com/gin-contrib/zap.
+Request logging and panic recovery for [Iris](https://github.com/kataras/iris) v14 through [zap](https://github.com/uber-go/zap). A port of [gin-contrib/zap](https://github.com/gin-contrib/zap), after the feature request [kataras/iris#2125](https://github.com/kataras/iris/issues/2125).
 
-## Usage
+Iris has an access log and a recovery middleware of its own, [middleware/accesslog](https://github.com/kataras/iris/tree/main/middleware/accesslog) and [middleware/recovery](https://github.com/kataras/iris/tree/main/middleware/recovery). Use this module when the rest of your application already logs through zap.
 
-### Start using it
-
-Download and install it:
+## Install
 
 ```sh
 go get github.com/iris-contrib/middleware/zap@main
 ```
 
-Import it in your code:
+The package is named `iriszap`:
 
 ```go
-import "github.com/iris-contrib/middleware/zap"
+import iriszap "github.com/iris-contrib/middleware/zap"
 ```
 
 ## Example
-
-See the [example](_examples/example_1/main.go).
 
 ```go
 package main
@@ -38,96 +34,104 @@ func main() {
 	app := iris.New()
 
 	logger, _ := zap.NewProduction()
+	defer logger.Sync()
 
-	// Add a iriszap middleware, which:
-	//   - Logs all requests, like a combined access and error log.
-	//   - Logs to stdout.
-	//   - RFC3339 with UTC time format.
+	// Logs each request after it has been served:
+	// RFC 3339 timestamps, in UTC.
 	app.Use(iriszap.New(logger, time.RFC3339, true))
 
-	// Logs all panic to error log
-	//   - stack means whether output the stack info.
+	// Recovers from a panic, logs it with the stack trace
+	// and answers 500.
 	app.Use(iriszap.RecoveryWithZap(logger, true))
 
-	// Example ping request.
 	app.Get("/ping", func(ctx iris.Context) {
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 
-	// Example when panic happen.
 	app.Get("/panic", func(ctx iris.Context) {
 		panic("An unexpected error happen!")
 	})
 
-	// Listen and serve on 0.0.0.0:8080.
 	app.Listen(":8080")
 }
 ```
 
-## Skip logging
+On the root application `Use` also runs for requests that match no route, so 404 answers are logged as well.
 
-To skip logging for specific paths, use `NewWithConfig`:
+## Request logging
+
+| Function | Description |
+| --- | --- |
+| `New(logger *zap.Logger, timeFormat string, utc bool) iris.Handler` | Logs every request. |
+| `NewWithConfig(logger *zap.Logger, conf *Config) iris.Handler` | The same with every option. |
+
+Each request is one log entry with the fields `status`, `method`, `path`, `query`, `ip`, `user-agent`, `latency` and, when a time format is given, `time`. The entry is written at the error level, with the error as its message, when a handler stored an error on the Context (`ctx.SetErr`, `ctx.StopWithError`). Otherwise it is written at the info level with the path as its message.
+
+| `Config` field | Description |
+| --- | --- |
+| `TimeFormat string` | A `time` package layout, for example `time.RFC3339`. Empty leaves the `time` field out. |
+| `UTC bool` | Formats the time in UTC instead of the local zone. |
+| `SkipPaths []string` | Request paths that are not logged. |
+| `Context Fn` | `func(ctx iris.Context) []zapcore.Field`. Returns extra fields for the entry. It runs after the handlers. |
 
 ```go
-app.Use(iriszap.NewWithConfig(logger, &iriszap.Config{
-  TimeFormat: time.RFC3339,
-  UTC:        true,
-  SkipPaths:  []string{"/no_log"},
-}))
-```
+package main
 
-## Custom Zap fields
+import (
+	"time"
 
-Example of logging the request body, the response request ID and the [OpenTelemetry](https://opentelemetry.io/) trace and span IDs. Full code at [example_2](_examples/example_2/main.go).
+	iriszap "github.com/iris-contrib/middleware/zap"
+	"github.com/kataras/iris/v14"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
 
-```go
 func main() {
 	app := iris.New()
 
 	logger, _ := zap.NewProduction()
+	defer logger.Sync()
 
 	app.Use(iriszap.NewWithConfig(logger, &iriszap.Config{
-		UTC:        true,
 		TimeFormat: time.RFC3339,
-		Context: iriszap.Fn(func(ctx iris.Context) []zapcore.Field {
-			req := ctx.Request()
-
-			fields := []zapcore.Field{}
-			// log request ID
-			if requestID := ctx.ResponseWriter().Header().Get("X-Request-Id"); requestID != "" {
-				fields = append(fields, zap.String("request_id", requestID))
+		UTC:        true,
+		SkipPaths:  []string{"/health"},
+		Context: func(ctx iris.Context) []zapcore.Field {
+			// Log the request id that a handler set on the response.
+			if id := ctx.ResponseHeader("X-Request-Id"); id != "" {
+				return []zapcore.Field{zap.String("request_id", id)}
 			}
-
-			// log trace and span ID
-			if trace.SpanFromContext(req.Context()).SpanContext().IsValid() {
-				fields = append(fields, zap.String("trace_id", trace.SpanFromContext(req.Context()).SpanContext().TraceID().String()))
-				fields = append(fields, zap.String("span_id", trace.SpanFromContext(req.Context()).SpanContext().SpanID().String()))
-			}
-
-			// log request body
-			var body []byte
-			var buf bytes.Buffer
-			tee := io.TeeReader(req.Body, &buf)
-			body, _ = io.ReadAll(tee)
-			req.Body = io.NopCloser(&buf)
-			fields = append(fields, zap.String("body", string(body)))
-
-			return fields
-		}),
+			return nil
+		},
 	}))
 
-	// Example ping request.
+	app.Get("/health", func(ctx iris.Context) {
+		ctx.WriteString("ok")
+	})
+
 	app.Get("/ping", func(ctx iris.Context) {
-		ctx.SetHeaderOverride("X-Request-Id", "1234-5678-9012")
-		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
+		ctx.SetHeader("X-Request-Id", "1234-5678-9012")
+		ctx.WriteString("pong")
 	})
 
-	app.Post("/ping", func(ctx iris.Context) {
-		ctx.SetHeaderOverride("X-Request-Id", "9012-5678-1234")
-		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
-	})
-
-	// Listen and serve on 0.0.0.0:8080.
 	app.Listen(":8080")
 }
 ```
+
+[_examples/example_2](_examples/example_2/main.go) also logs the request body and the OpenTelemetry trace and span ids. It is a Go module of its own, because it needs the OpenTelemetry packages, which the middleware does not depend on.
+
+## Panic recovery
+
+| Function | Description |
+| --- | --- |
+| `RecoveryWithZap(logger *zap.Logger, stack bool) iris.Handler` | Recovers, logs the panic at the error level and answers 500 with an empty body. `stack` adds the stack trace to the entry. |
+| `CustomRecoveryWithZap(logger, stack, recovery func(iris.Context, interface{})) iris.Handler` | The same, with your own function for the response. |
+
+The entry carries the panic value and the request line and headers, as dumped by `httputil.DumpRequest`. That dump includes the `Authorization` and `Cookie` headers, so treat the log as sensitive.
+
+A broken connection (`broken pipe`, `connection reset by peer`) is logged without a stack trace and nothing is written to the client.
+
+## Examples
+
+- [_examples/example_1](_examples/example_1/main.go)
+- [_examples/example_2](_examples/example_2/main.go)

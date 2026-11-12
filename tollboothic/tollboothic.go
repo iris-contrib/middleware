@@ -1,4 +1,5 @@
-// Package tollboothic v6(latest) provides rate-limiting logic to iris request handlers.
+// Package tollboothic provides rate-limiting logic to iris request handlers
+// through github.com/didip/tollbooth/v6.
 package tollboothic
 
 import (
@@ -15,6 +16,8 @@ func init() {
 
 // LimitHandler is a middleware that performs
 // rate-limiting given a "limiter" configuration.
+// A request over the limit is answered with the limiter's status code
+// (429 by default), message and message content type.
 //
 // Read more at: https://github.com/didip/tollbooth.
 func LimitHandler(l *limiter.Limiter) iris.Handler {

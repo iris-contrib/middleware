@@ -88,11 +88,17 @@ func GetTransaction(ctx iris.Context) *newrelic.Transaction {
 }
 
 // Middleware creates an Iris middleware that instruments requests.
+// Each request is a web transaction named after the request's method and
+// the name of the handler that follows the middleware in the chain. When
+// more middleware is registered after it, that is the next middleware and
+// not the route's handler; MiddlewareWithFullPath names the transaction
+// after the route instead.
 //
 //	import nriris "github.com/iris-contrib/middleware/newrelic"
 //	router := iris.New()
-//	// Add the nriris middleware before other middlewares or routes:
-//	router.Use(niris.Middleware(app))
+//	router.Use(nriris.Middleware(app))
+//
+// A nil app makes it a handler that only calls the next one.
 func Middleware(app *newrelic.Application) iris.Handler {
 	return middleware(app, false)
 }
@@ -102,17 +108,26 @@ func New(app *newrelic.Application) iris.Handler {
 	return Middleware(app)
 }
 
-// MiddleareWithFullPath same as Middleare but
-// it sets the option for naming the transaction using
-// the registered route path instead of the method + handler name.
-func MiddleareWithFullPath(app *newrelic.Application) iris.Handler {
+// MiddlewareWithFullPath is the same as Middleware but it names the
+// transaction after the method and the path of the route as it was registered,
+// for example "GET /users/{id:int}", instead of the method and the handler name.
+// A request that matched no route is named after the method and the full request URI.
+func MiddlewareWithFullPath(app *newrelic.Application) iris.Handler {
 	return middleware(app, true)
+}
+
+// MiddleareWithFullPath calls MiddlewareWithFullPath.
+//
+// Deprecated: the name is misspelled. Use MiddlewareWithFullPath instead.
+func MiddleareWithFullPath(app *newrelic.Application) iris.Handler {
+	return MiddlewareWithFullPath(app)
 }
 
 func middleware(app *newrelic.Application, useFullPath bool) iris.Handler {
 	return func(ctx iris.Context) {
 		if app != nil {
-			w := &headerResponseWriter{w: ctx.ResponseWriter()}
+			previous := ctx.ResponseWriter()
+			w := &headerResponseWriter{w: previous}
 			var nextHandler iris.Handler
 			if idx := ctx.HandlerIndex(-1) + 1; idx < len(ctx.Handlers()) {
 				nextHandler = ctx.Handlers()[idx]
@@ -123,8 +138,8 @@ func middleware(app *newrelic.Application, useFullPath bool) iris.Handler {
 
 			var name string
 			if useFullPath {
-				if route := ctx.GetCurrentRoute(); route != nil {
-					name = ctx.Request().Method + " " + ctx.GetCurrentRoute().Tmpl().Src
+				if route := ctx.CurrentRoute(); route != nil {
+					name = ctx.Request().Method + " " + route.Tmpl().Src
 				} else {
 					name = ctx.Request().Method + " " + ctx.FullRequestURI()
 				}
@@ -137,12 +152,20 @@ func middleware(app *newrelic.Application, useFullPath bool) iris.Handler {
 			defer txn.End()
 
 			repl := &replacementResponseWriter{
-				ResponseWriter: ctx.ResponseWriter(),
+				ResponseWriter: previous,
 				replacement:    txn.SetWebResponse(w),
 				code:           http.StatusOK,
 			}
 			ctx.SetResponseWriter(repl)
-			defer repl.flushHeader()
+			// Runs before txn.End: report the status code when the handlers
+			// wrote no body, and put the previous writer back on the Context,
+			// as the framework's own middleware do when they replace it.
+			// A handler registered outside this one reads the Context's
+			// writer after the chain returns.
+			defer func() {
+				repl.flushHeader()
+				ctx.SetResponseWriter(previous)
+			}()
 
 			ctx.Values().Set(TransactionContextKey, txn)
 		}

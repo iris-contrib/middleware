@@ -33,7 +33,7 @@ func main() {
 // For more details and customization please read the documentation of:
 // https://github.com/throttled/throttled
 //
-// The iris-contrib/throttler middleare is the equivalent of:
+// The iris-contrib/throttler middleware is the equivalent of:
 // https://github.com/throttled/throttled/blob/master/http.go.
 func newRateLimiterMiddleware(maxRatePerMinute int) iris.Handler {
 	store, err := memstore.New(65536)

@@ -14,15 +14,10 @@ func main() {
 	app := iris.New()
 	m := prometheusMiddleware.New("serviceName", 0.3, 1.2, 5.0)
 
+	// Use on the root application records every request, the ones that
+	// match no route (404, 405) included. Do not call m.ServeHTTP again
+	// from a HandleNoRoute handler: that would count a not found twice.
 	app.Use(m.ServeHTTP)
-
-	app.HandleNoRoute(func(ctx iris.Context) {
-		// error code handlers are not sharing the same middleware as other routes, so we have
-		// to call them inside their body.
-		m.ServeHTTP(ctx)
-
-		ctx.Writef("Not Found")
-	})
 
 	app.Get("/", func(ctx iris.Context) {
 		sleep := rand.Intn(4999) + 1

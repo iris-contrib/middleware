@@ -70,19 +70,18 @@ type Middleware struct {
 }
 
 // OnError is the default error handler.
-// Use it to change the behavior for each error.
-// See `Config.ErrorHandler`.
+// It stops the request with 401 (Unauthorized) and the error's text,
+// and stores the error on the Context (see Context.GetErr).
+// Set `Config.ErrorHandler` to change the behavior.
 func OnError(ctx iris.Context, err error) {
 	if err == nil {
 		return
 	}
 
-	ctx.StopExecution()
-	ctx.StatusCode(iris.StatusUnauthorized)
-	ctx.WriteString(err.Error())
+	ctx.StopWithError(iris.StatusUnauthorized, err)
 }
 
-// New constructs a new Secure instance with supplied options.
+// New constructs a new Middleware instance with supplied options.
 func New(cfg ...Config) *Middleware {
 	var c Config
 	if len(cfg) == 0 {

@@ -198,7 +198,7 @@ func (s *Secure) Serve(ctx iris.Context) {
 func addResponseHeaders(responseHeader http.Header, ctx iris.Context) {
 	for key, values := range responseHeader {
 		for _, value := range values {
-			ctx.SetHeaderOverride(key, value)
+			ctx.SetHeader(key, value)
 		}
 	}
 }

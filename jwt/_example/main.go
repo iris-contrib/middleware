@@ -14,12 +14,8 @@ var j = jwt.New(jwt.Config{
 	ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
 		return mySecret, nil
 	},
+	// Refuse a token that has expired or carries no "exp" claim.
 	Expiration: true,
-	// Extract by the "token" url.
-	// There are plenty of options.
-	// The default jwt's behavior to extract a token value is by
-	// the `Authorization: Bearer $TOKEN` header.
-	Extractor: jwt.FromParameter("token"),
 	// When set, the middleware verifies that tokens are
 	// signed with the specific signing algorithm
 	// If the signing method is not constant the `jwt.Config.ValidationKeyGetter` callback
@@ -27,6 +23,13 @@ var j = jwt.New(jwt.Config{
 	// Important to avoid security issues described here:
 	// https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
 	SigningMethod: jwt.SigningMethodHS256,
+	// The token is read from the `Authorization: Bearer $TOKEN` header,
+	// which is the default. To read it from the URL query instead:
+	//
+	// Extractor: jwt.FromParameter("token"),
+	//
+	// Keep in mind that a token in a URL ends up in access logs,
+	// in the browser history and in Referer headers.
 })
 
 // generate token to use.
@@ -39,37 +42,41 @@ func getTokenHandler(ctx iris.Context) {
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
-	tokenString, _ := token.SignedString(mySecret)
-
-	ctx.HTML(`Token: ` + tokenString + `<br/><br/>
-<a href="/protected?token=` + tokenString + `">/protected?token=` + tokenString + `</a>`)
-}
-
-func myAuthenticatedHandler(ctx iris.Context) {
-	if err := j.CheckJWT(ctx); err != nil {
-		j.Config.ErrorHandler(ctx, err)
+	tokenString, err := token.SignedString(mySecret)
+	if err != nil {
+		ctx.StopWithError(iris.StatusInternalServerError, iris.PrivateError(err))
 		return
 	}
 
-	token := ctx.Values().Get("jwt").(*jwt.Token)
+	ctx.WriteString(tokenString)
+}
+
+func myAuthenticatedHandler(ctx iris.Context) {
+	// The token that j.Serve verified.
+	token := j.Get(ctx)
 
 	ctx.Writef("This is an authenticated request\n\n")
-	// ctx.Writef("Claim content:\n")
 
 	foobar := token.Claims.(jwt.MapClaims)
 	ctx.Writef("foo=%s\n", foobar["foo"])
-	// for key, value := range foobar {
-	// 	ctx.Writef("%s = %s", key, value)
-	// }
 }
 
-func main() {
+func newApp() *iris.Application {
 	app := iris.New()
 
 	app.Get("/", getTokenHandler)
-	app.Get("/protected", myAuthenticatedHandler)
+	// j.Serve stops the request with 401 when the token is missing or invalid.
+	app.Get("/protected", j.Serve, myAuthenticatedHandler)
 
-	// j.CheckJWT(Context) error can be also used inside handlers.
+	// j.CheckJWT(ctx) error does the same check from inside a handler.
 
+	return app
+}
+
+func main() {
+	app := newApp()
+
+	// $ TOKEN=$(curl -s http://localhost:8080)
+	// $ curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/protected
 	app.Listen(":8080")
 }

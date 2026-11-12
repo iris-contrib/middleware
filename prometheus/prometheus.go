@@ -24,8 +24,8 @@ const (
 	latencyName = "http_request_duration_seconds"
 )
 
-// Prometheus is a handler that exposes prometheus metrics for the number of requests,
-// the latency and the response size, partitioned by status code, method and HTTP path.
+// Prometheus is a handler that records prometheus metrics for the number of requests
+// and their latency, partitioned by status code, method and HTTP path.
 //
 // Usage: pass its `ServeHTTP` to a route or globally.
 type Prometheus struct {
@@ -33,7 +33,10 @@ type Prometheus struct {
 	latency *prometheus.HistogramVec
 }
 
-// New returns a new prometheus middleware.
+// New returns a new prometheus middleware and registers its two collectors,
+// http_requests_total and http_request_duration_seconds, to the default
+// prometheus registry. The "name" is the value of their "service" label.
+// It panics if it is called a second time with the same name.
 //
 // If buckets are empty then `DefaultBuckets` are set.
 func New(name string, buckets ...float64) *Prometheus {
@@ -65,6 +68,8 @@ func New(name string, buckets ...float64) *Prometheus {
 	return &p
 }
 
+// ServeHTTP is the Iris handler of the middleware. It runs the rest of the
+// chain and then records the request with the status code it ended with.
 func (p *Prometheus) ServeHTTP(ctx iris.Context) {
 	start := time.Now()
 	ctx.Next()

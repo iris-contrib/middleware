@@ -7,9 +7,7 @@ import (
 	"github.com/iris-contrib/middleware/tollboothic"
 )
 
-// $ go get github.com/iris-contrib/middleware/tollboothic@master
-// $ go get github.com/didip/tollbooth/v6@latest
-// $ go run main.go
+// $ go run .
 
 func main() {
 	app := iris.New()

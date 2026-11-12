@@ -7,8 +7,7 @@ import (
 	"github.com/iris-contrib/middleware/casbin"
 )
 
-// $ go get github.com/casbin/casbin/v2@v2.65.1
-// $ go run main.go
+// $ go run .
 
 func newApp() *iris.Application {
 	app := iris.New()
@@ -32,11 +31,14 @@ func newApp() *iris.Application {
 				ctx.Next()
 			}
 	*/
-	app.Use(basicauth.Default(map[string]string{
+	// UseRelevant runs the two handlers on matched routes only, so a path
+	// with no route answers 404. Use on the root application also runs on
+	// 404 and 405, which would answer 403 there, like the router example.
+	app.UseRelevant(basicauth.Default(map[string]string{
 		"bob":   "bobpass",
 		"alice": "alicepass",
 	}))
-	app.Use(casbinMiddleware.ServeHTTP)
+	app.UseRelevant(casbinMiddleware.ServeHTTP)
 
 	app.Get("/", hi)
 

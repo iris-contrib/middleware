@@ -7,8 +7,7 @@ import (
 	"github.com/iris-contrib/middleware/casbin"
 )
 
-// $ go get github.com/casbin/casbin/v2@v2.65.1
-// $ go run main.go
+// $ go run .
 
 func newApp() *iris.Application {
 	app := iris.New()
@@ -37,10 +36,9 @@ func newApp() *iris.Application {
 		"alice": "alicepass",
 	}))
 
-	// Note that by registering with UseRouter instead of Use,
-	// and becauese the middleware stops the execution with 403 (Forbidden) by default,
-	// if the authentication and roles match failed,
-	// unregistered route paths will fire 403 instead of 404 (Not Found).
+	// UseRouter runs before the router, on every request. The middleware
+	// stops a request that no policy allows with 403 (Forbidden), so a path
+	// with no route answers 403 instead of 404 (Not Found).
 	app.UseRouter(casbinMiddleware.ServeHTTP)
 
 	app.Get("/", hi)

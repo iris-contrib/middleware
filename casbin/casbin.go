@@ -62,13 +62,20 @@ func NewEnforcer(modelFile, policyFile string) (*Casbin, error) {
 	return New(e), nil
 }
 
-// ServeHTTP is the iris compatible casbin handler which should be passed to specific routes or parties.
-// Responds with Status Forbidden on unauthorized clients.
-// Usage:
-// - app.Use(authMiddleware)
-// - app.Use(casbinMiddleware.ServeHTTP) OR
-// - app.UseRouter(casbinMiddleware.ServeHTTP) OR per route:
-// - app.Get("/dataset1/resource1", casbinMiddleware.ServeHTTP, myHandler)
+// ServeHTTP is the Iris handler of the casbin middleware.
+// It answers 403 (Forbidden) through the UnauthorizedHandler when the subject
+// is not allowed to access the request's path with the request's method.
+//
+// An authentication middleware that sets the subject must run before it.
+// Where the pair is registered decides what an unknown path answers:
+//
+//   - app.UseRouter(auth, casbinMiddleware.ServeHTTP) runs before the router,
+//     on every request. A path with no route answers 403 unless a policy allows it.
+//   - app.Use(auth, casbinMiddleware.ServeHTTP) on the root application behaves
+//     the same for unknown paths, because Use on the root also runs on 404 and 405.
+//   - app.UseRelevant(auth, casbinMiddleware.ServeHTTP), Use on a child router,
+//     or the handler passed to a single route run on matched routes only.
+//     A path with no route answers 404.
 func (c *Casbin) ServeHTTP(ctx iris.Context) {
 	if !c.Check(ctx) {
 		c.UnauthorizedHandler(ctx)
@@ -78,15 +85,25 @@ func (c *Casbin) ServeHTTP(ctx iris.Context) {
 	ctx.Next()
 }
 
-// Check checks the username, request's method and path and
-// returns true if permission grandted otherwise false.
+// Check checks the subject, the request's method and path and
+// returns true if permission is granted, otherwise false.
+//
+// When the enforcer itself fails (a matcher that does not evaluate, an adapter
+// error) the request is denied and the error is stored on the Context as a
+// private one: ctx.GetErr returns it for logging, and no error handler writes
+// it to the client.
 //
 // It's an Iris Filter.
 // Usage:
 // - inside a handler
 // - using the iris.NewConditionalHandler
 func (c *Casbin) Check(ctx iris.Context) bool {
-	ok, _ := c.Enforce(ctx, c.SubjectExtractor(ctx))
+	ok, err := c.Enforce(ctx, c.SubjectExtractor(ctx))
+	if err != nil {
+		ctx.SetErr(iris.PrivateError(err))
+		return false
+	}
+
 	return ok
 }
 

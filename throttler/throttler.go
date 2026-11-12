@@ -26,8 +26,13 @@ var (
 
 	// DefaultError is the default Error function for an RateLimiter.
 	// It returns a 500 status code with a generic message.
+	//
+	// The error itself is the server's (a store that cannot be reached, a
+	// limiter that is not set). It is stored on the Context as a private
+	// error: ctx.GetErr returns it for logging and nothing sends it to the client.
 	DefaultError = func(ctx iris.Context, err error) {
-		ctx.StopWithError(http.StatusInternalServerError, err)
+		ctx.SetErr(iris.PrivateError(err))
+		ctx.StopWithText(http.StatusInternalServerError, "internal error")
 	}
 )
 
@@ -38,10 +43,10 @@ type RateLimiter struct {
 	DeniedHandler iris.Handler
 
 	// Error is called if the RateLimiter returns an error. If it is
-	// nil, the DefaultErrorFunc is used.
+	// nil, the DefaultError variable is used.
 	Error func(ctx iris.Context, err error)
 
-	// Limiter is call for each request to determine whether the
+	// RateLimiter is called for each request to determine whether the
 	// request is permitted and update internal state. It must be set.
 	RateLimiter throttled.RateLimiterCtx
 
@@ -61,6 +66,7 @@ type RateLimiter struct {
 func (t *RateLimiter) RateLimit(ctx iris.Context) {
 	if t.RateLimiter == nil {
 		t.error(ctx, errors.New("you must set a RateLimiter on RateLimiter"))
+		return
 	}
 
 	var k string
@@ -98,20 +104,20 @@ func (t *RateLimiter) error(ctx iris.Context, err error) {
 
 func setRateLimitHeaders(ctx iris.Context, context throttled.RateLimitResult) {
 	if v := context.Limit; v >= 0 {
-		ctx.SetHeaderOverride("X-RateLimit-Limit", strconv.Itoa(v))
+		ctx.SetHeader("X-RateLimit-Limit", strconv.Itoa(v))
 	}
 
 	if v := context.Remaining; v >= 0 {
-		ctx.SetHeaderOverride("X-RateLimit-Remaining", strconv.Itoa(v))
+		ctx.SetHeader("X-RateLimit-Remaining", strconv.Itoa(v))
 	}
 
 	if v := context.ResetAfter; v >= 0 {
 		vi := int(math.Ceil(v.Seconds()))
-		ctx.SetHeaderOverride("X-RateLimit-Reset", strconv.Itoa(vi))
+		ctx.SetHeader("X-RateLimit-Reset", strconv.Itoa(vi))
 	}
 
 	if v := context.RetryAfter; v >= 0 {
 		vi := int(math.Ceil(v.Seconds()))
-		ctx.SetHeaderOverride("Retry-After", strconv.Itoa(vi))
+		ctx.SetHeader("Retry-After", strconv.Itoa(vi))
 	}
 }

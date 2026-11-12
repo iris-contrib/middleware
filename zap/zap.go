@@ -3,6 +3,7 @@ package iriszap
 
 import (
 	"net"
+	"net/http"
 	"net/http/httputil"
 	"os"
 	"runtime/debug"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/middleware/recovery"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -89,6 +91,25 @@ func defaultHandleRecovery(ctx iris.Context, err interface{}) {
 	ctx.StopWithStatus(iris.StatusInternalServerError)
 }
 
+// dumpRequest returns the request line and the headers of the request for
+// the log entry of a panic. The values of the headers that carry credentials
+// are replaced with "[redacted]", as the framework's own recovery middleware
+// does and from the same list, recovery.RedactedRequestHeaders.
+func dumpRequest(r *http.Request) string {
+	// A shallow copy with its own header map, so that the live request
+	// keeps its values.
+	redacted := *r
+	redacted.Header = r.Header.Clone()
+	for _, name := range recovery.RedactedRequestHeaders {
+		if len(redacted.Header.Values(name)) > 0 {
+			redacted.Header.Set(name, "[redacted]")
+		}
+	}
+
+	raw, _ := httputil.DumpRequest(&redacted, false)
+	return string(raw)
+}
+
 // RecoveryWithZap returns an iris.Handler (middleware)
 // that recovers from any panics and logs requests using uber-go/zap.
 // All errors are logged using zap.Error().
@@ -103,6 +124,10 @@ func RecoveryWithZap(logger *zap.Logger, stack bool) iris.Handler {
 // All errors are logged using zap.Error().
 // stack means whether output the stack info.
 // The stack info is easy to find where the error occurs but the stack info is too large.
+//
+// The entry carries the request line and headers. The values of the
+// Authorization, Cookie and the other headers listed in the framework's
+// recovery.RedactedRequestHeaders are replaced with "[redacted]".
 func CustomRecoveryWithZap(logger *zap.Logger, stack bool, recovery func(iris.Context, interface{})) iris.Handler {
 	return func(ctx iris.Context) {
 		defer func() {
@@ -118,11 +143,11 @@ func CustomRecoveryWithZap(logger *zap.Logger, stack bool, recovery func(iris.Co
 					}
 				}
 
-				httpRequest, _ := httputil.DumpRequest(ctx.Request(), false)
+				httpRequest := dumpRequest(ctx.Request())
 				if brokenPipe {
 					logger.Error(ctx.Request().URL.Path,
 						zap.Any("error", err),
-						zap.String("request", string(httpRequest)),
+						zap.String("request", httpRequest),
 					)
 					// If the connection is dead, we can't write a status to it.
 					ctx.SetErr(err.(error)) // nolint: errcheck
@@ -134,14 +159,14 @@ func CustomRecoveryWithZap(logger *zap.Logger, stack bool, recovery func(iris.Co
 					logger.Error("[Recovery from panic]",
 						zap.Time("time", time.Now()),
 						zap.Any("error", err),
-						zap.String("request", string(httpRequest)),
+						zap.String("request", httpRequest),
 						zap.String("stack", string(debug.Stack())),
 					)
 				} else {
 					logger.Error("[Recovery from panic]",
 						zap.Time("time", time.Now()),
 						zap.Any("error", err),
-						zap.String("request", string(httpRequest)),
+						zap.String("request", httpRequest),
 					)
 				}
 				recovery(ctx, err)

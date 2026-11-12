@@ -17,7 +17,6 @@ type Store interface {
 	// cookie to the http.ResponseWriter.
 	// For non-cookie stores, the cookie should contain a unique (256 bit) ID
 	// or key that references the token in the backend store.
-	// csrf.GenerateRandomBytes is a helper function for generating secure IDs.
 	Save(ctx iris.Context, token []byte) error
 }
 

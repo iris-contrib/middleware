@@ -1,20 +1,16 @@
 # How to Use Iris and PostgreSQL for Web Development
 
-[Iris](https://www.iris-go.com/) is a fast and lightweight web framework for Go. PostgreSQL is a reliable relational database system with advanced data types and functions. Together they form a solid foundation for building modern web applications.
-
-But how do you connect the two in a simple and type-safe way? How do you perform common database operations without boilerplate, and handle transactions, schema creation, query tracing and errors in one consistent place?
-
-The answer is PG middleware, a package for Iris that provides easy and type-safe access to a PostgreSQL database. In this article we build a small REST API for managing customers with it.
+This walkthrough builds a small REST API for customers with [Iris](https://www.iris-go.com/) v14 and PostgreSQL, using the PG middleware of this repository. The complete program is [main.go](main.go).
 
 ## What is PG middleware?
 
-PG middleware is a package for the Iris web framework that provides easy and type-safe access to a PostgreSQL database:
+PG middleware is a package for the Iris web framework that gives request handlers typed access to a PostgreSQL database:
 
 - It supports PostgreSQL 9.5 and above.
 - It uses the [pg](https://github.com/kataras/pg) package and the [pgx](https://github.com/jackc/pgx) driver under the hood.
-- It supports transactions, schema creation and validation, query tracing and error handling.
+- It can run each request in a transaction, create and check the schema, and trace queries.
 - It registers custom types and table models through a schema object.
-- It provides a generic repository interface for common CRUD operations.
+- It provides a generic repository for common CRUD operations.
 
 ## How to install PG middleware?
 
@@ -24,23 +20,29 @@ go get github.com/iris-contrib/middleware/pg@main
 
 ## How to use PG middleware?
 
-1. Import the package in your code:
+1. Import the packages:
 
 ```go
 import (
 	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/rest/errors"
 
 	"github.com/iris-contrib/middleware/pg"
 )
 ```
 
-2. Define your database table models as structs with `pg` tags:
+2. Define your database table models as structs with `json` and `pg` tags, and the body your API accepts:
 
 ```go
 // The Customer database table model.
 type Customer struct {
 	ID   string `json:"id" pg:"type=uuid,primary"`
 	Name string `json:"name" pg:"type=varchar(255)"`
+}
+
+// The body of the create and update requests.
+type customerInput struct {
+	Name string `json:"name"`
 }
 ```
 
@@ -70,18 +72,16 @@ opts := pg.Options{
 	Trace:         true,
 	CreateSchema:  true,
 	CheckSchema:   true,
-	ErrorHandler: func(ctx iris.Context, err error) bool {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
-		return true
-	},
 }
 
 p := pg.New(schema, opts)
 ```
 
-The connection fields (host, port, user, password, dbname, schema, sslmode) establish the connection. The feature flags control the middleware behavior: `Transactional` wraps each request handler in a database transaction, `Trace` logs each executed query, `CreateSchema` creates the schema if it doesn't exist and `CheckSchema` reports missing tables and columns. The `ErrorHandler` receives any error that occurs during the middleware execution; return `true` to mark it handled or `false` to fall through to the default error handler.
+The connection fields (host, port, user, password, dbname, schema, sslmode) establish the connection. The other fields control the middleware: `Transactional` runs each request in a database transaction, `Trace` logs each executed query, `CreateSchema` creates the tables that don't exist and `CheckSchema` reports missing tables and columns.
 
-The `New` function creates the middleware instance from the schema and options.
+There is also an optional `ErrorHandler` field. It receives the errors of the middleware itself, such as a transaction that cannot start or commit. Return `true` from it to mark the error handled, or `false` to fall through to `pg.DefaultErrorHandler`. This example does not set it.
+
+`New` connects to the database and panics when it cannot.
 
 5. Attach the middleware handler to your Iris app or routes:
 
@@ -97,18 +97,21 @@ customerAPI.Put("/{id:uuid}", updateCustomer)
 customerAPI.Delete("/{id:uuid}", deleteCustomer)
 ```
 
-The middleware handler takes an Iris context and calls the next handler in the chain. Attach it with `Use`, or pass it to `Router` as done here for the customer API group.
+The handler stores the database on the request Context and calls the next handler. Attach it with `Use`, or pass it to `Router` as done here for the customer API group.
 
-6. Use the `pg.DB` or `pg.Repository` package-level functions to access the database instance or the repository interface in your handlers:
+6. Use the `pg.DB` or `pg.Repository` package-level functions to reach the database or a typed repository in your handlers:
 
 ```go
+// fail answers a database error and marks the request as failed.
+func fail(ctx iris.Context, err error) {
+	ctx.SetErr(iris.PrivateError(err))
+	errors.HandleError(ctx, err)
+}
+
 func createCustomer(ctx iris.Context) {
-	var payload = struct {
-		Name string `json:"name"`
-	}{}
-	err := ctx.ReadJSON(&payload)
-	if err != nil {
-		ctx.StopWithError(iris.StatusBadRequest, err)
+	// BindJSON answers 400 by itself when the body is not valid JSON.
+	payload, ok := ctx.BindJSON[customerInput]()
+	if !ok {
 		return
 	}
 
@@ -122,9 +125,9 @@ func createCustomer(ctx iris.Context) {
 	customer := Customer{
 		Name: payload.Name,
 	}
-	err = customers.InsertSingle(ctx, customer, &customer.ID)
+	err := customers.InsertSingle(ctx, customer, &customer.ID)
 	if err != nil {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
+		fail(ctx, err)
 		return
 	}
 
@@ -143,12 +146,7 @@ func getCustomer(ctx iris.Context) {
 	// Get the customer by the id.
 	customer, err := customers.SelectByID(ctx, id)
 	if err != nil {
-		if pg.IsErrNoRows(err) {
-			ctx.StopWithStatus(iris.StatusNotFound)
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		}
-
+		fail(ctx, err) // 404 when there is no such customer.
 		return
 	}
 
@@ -160,12 +158,8 @@ func updateCustomer(ctx iris.Context) {
 	// Get the id from the path parameter.
 	id := ctx.Params().GetString("id")
 
-	var payload = struct {
-		Name string `json:"name"`
-	}{}
-	err := ctx.ReadJSON(&payload)
-	if err != nil {
-		ctx.StopWithError(iris.StatusBadRequest, err)
+	payload, ok := ctx.BindJSON[customerInput]()
+	if !ok {
 		return
 	}
 
@@ -178,20 +172,19 @@ func updateCustomer(ctx iris.Context) {
 		Name: payload.Name,
 	}
 
-	_, err = customers.UpdateOnlyColumns(ctx, []string{"name"}, customer)
+	n, err := customers.UpdateOnlyColumns(ctx, []string{"name"}, customer)
 	// OR customers.Update(ctx, customer)
 	if err != nil {
-		if pg.IsErrNoRows(err) {
-			ctx.StopWithStatus(iris.StatusNotFound)
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		}
+		fail(ctx, err)
+		return
+	}
 
+	if n == 0 {
+		errors.NotFound.Message(ctx, "customer not found")
 		return
 	}
 
 	// Display a success message.
-	ctx.StatusCode(iris.StatusOK)
 	ctx.JSON(iris.Map{"message": "Customer updated successfully"})
 }
 
@@ -203,32 +196,32 @@ func deleteCustomer(ctx iris.Context) {
 	customers := pg.Repository[Customer](ctx)
 
 	// Delete the customer by the id.
-	_, err := customers.Delete(ctx, Customer{ID: id})
+	deleted, err := customers.DeleteByID(ctx, id)
 	if err != nil {
-		if pg.IsErrNoRows(err) {
-			ctx.StopWithStatus(iris.StatusNotFound)
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		}
+		fail(ctx, err)
+		return
+	}
 
+	if !deleted {
+		errors.NotFound.Message(ctx, "customer not found")
 		return
 	}
 
 	// Display a success message.
-	ctx.StatusCode(iris.StatusOK)
 	ctx.JSON(iris.Map{"message": "Customer deleted successfully"})
 }
 ```
 
-The `pg.DB` function returns the database instance associated with the Iris context; use it for any operation the [pg](https://github.com/kataras/pg) package API offers. The `pg.Repository` function returns a generic repository interface for the given model type, with type-safe methods for common CRUD operations. This example uses the repository interface to insert, select, update and delete customers.
+The `pg.DB` function returns the database of the current request, which is the transaction when `Transactional` is on; use it for any operation the [pg](https://github.com/kataras/pg) package offers. The `pg.Repository` function returns a generic repository for the given model type, with typed methods for common CRUD operations.
+
+Two things happen in `fail`. `errors.HandleError` writes the response through the framework's `rest/errors` package: 404 when there are no rows, 409 for a duplicate key, 400 for a value PostgreSQL cannot parse and a generic 500 for anything else. The database's own message stays in the log. `ctx.SetErr` stores the error on the Context, which is what tells the middleware to roll the transaction back instead of committing it.
 
 ## How to run the example?
 
-1. Clone the [PG middleware repository](https://github.com/iris-contrib/middleware/tree/main/pg) and navigate to the `_examples/basic` folder.
-2. Install the dependencies using `go mod tidy`.
-3. Start a PostgreSQL server and create a database named `test_db`.
-4. Run the main.go file using `go run main.go`.
-5. Use a tool like [Postman](https://www.postman.com/) or [curl](https://curl.se/) to test the API endpoints:
+1. Clone the [repository](https://github.com/iris-contrib/middleware) and go to the `pg/_examples/basic` folder.
+2. Start a PostgreSQL server and create a database named `test_db`.
+3. Run the program with `go run .`.
+4. Use a tool like [curl](https://curl.se/) to test the API endpoints:
 
 ```sh
 # Create a new customer
@@ -244,16 +237,16 @@ curl -X PUT -H "Content-Type: application/json" -d '{"name":"Bob"}' http://local
 curl -X DELETE http://localhost:8080/api/customer/1f8c9a7c-6b7c-4f0e-8a1d-9f2a9c3b7b8e
 ```
 
-## Conclusion
+## Earlier versions of this article
 
-We connected Iris and PostgreSQL through PG middleware and built a small REST API for managing customers, with transactions, schema creation and validation, query tracing and error handling configured in one place.
-
-Article published at:
+The first version of this walkthrough, written for Iris v12, was published at:
 
 1. https://dev.to/kataras/how-to-use-iris-and-postgresql-for-web-development-3kka
 	- https://twitter.com/TheGoDev/status/1676701488544874498
 	- https://twitter.com/TheDatabaseDev/status/1676748294595174401
 2. https://medium.com/@kataras/how-to-use-iris-and-postgresql-for-web-development-e8c46d72f1e6
 3. https://www.linkedin.com/pulse/how-use-iris-postgresql-web-development-gerasimos-maropoulos
+
+The code there uses the v12 API. This file is the current one.
 
 If you have any feedback or questions, please open an issue or a pull request on [GitHub](https://github.com/iris-contrib/middleware/tree/main/pg).

@@ -1,100 +1,143 @@
-# JSON Web Tokens
+# jwt
 
-**Iris has its own builtin JWT middleware**, which is faster, supports payload encryption, works with the `iris.User` interface and can write and read Go structs or maps as token claims. Prefer it over this community edition: see [kataras/iris/middleware/jwt](https://github.com/kataras/iris/tree/main/middleware/jwt). Note that on Iris v14 the builtin verifier reads tokens from the `Authorization` header only by default; this community middleware keeps its own extractor configuration.
+JSON Web Token verification for [Iris](https://github.com/kataras/iris) v14, built on [golang-jwt/jwt](https://github.com/golang-jwt/jwt) v4.
 
------
+**Iris has its own JWT middleware**, [kataras/iris/middleware/jwt](https://github.com/kataras/iris/tree/main/middleware/jwt). It signs as well as verifies, decodes claims into your own struct, supports encrypted payloads and a blocklist, and is maintained with the framework. Prefer it for new code. This module remains for applications that already use it.
 
-Provides basic JWT functionality for your APIs.
-> Full example at: [_example/main.go](_example/main.go)
+## Install
 
-**1.** Install with `go get github.com/iris-contrib/middleware/jwt@main`
-
-**2.** Import in your code `import "github.com/iris-contrib/middleware/jwt"`
-
-**3.** Define a HS256 secret, e.g. `var mySecret = []byte("My Secret")`. In production you usually load it from a local file or from system environment variables
-
-**4.** Initialize the middleware:
-
-```go
-j := jwt.New(jwt.Config{
-    ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
-        return mySecret, nil
-    },
-    SigningMethod: jwt.SigningMethodHS256,
-})
+```sh
+go get github.com/iris-contrib/middleware/jwt@main
 ```
 
-**5.** Generate a token:
-
 ```go
-token := jwt.NewTokenWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-    "foo": "bar",
-})
-
-tokenString, _ := token.SignedString(mySecret)
+import "github.com/iris-contrib/middleware/jwt"
 ```
 
-**6.** Verify a token with the `j.Serve` middleware before the main handler, e.g.:
+## Example
 
 ```go
-app.Get("/protected", j.Serve, protectedHandler)
-```
+package main
 
-Or per group of routes:
+import (
+	"time"
 
-```go
-usersAPI := app.Router("/users", j.Serve)
-usersAPI.Get("/", protectedHandler)
-```
+	"github.com/kataras/iris/v14"
 
-Or inside a handler, with `j.CheckJWT`:
+	"github.com/iris-contrib/middleware/jwt"
+)
 
-```go
-func protectedHandler(ctx iris.Context) {
-    if err := j.CheckJWT(ctx); err != nil {
-        j.Config.ErrorHandler(ctx, err)
-        return
-    }
+// In production load the secret from the environment or from a file.
+var mySecret = []byte("My Secret")
 
-    // [...]
+func main() {
+	app := iris.New()
+
+	j := jwt.New(jwt.Config{
+		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+			return mySecret, nil
+		},
+		// Refuse a token signed with any other algorithm.
+		SigningMethod: jwt.SigningMethodHS256,
+		// Refuse a token that has expired or has no "exp" claim.
+		Expiration: true,
+	})
+
+	// Issues a token.
+	app.Get("/token", func(ctx iris.Context) {
+		token := jwt.NewTokenWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"foo": "bar",
+			"exp": time.Now().Add(15 * time.Minute).Unix(),
+		})
+
+		tokenString, err := token.SignedString(mySecret)
+		if err != nil {
+			ctx.StopWithError(iris.StatusInternalServerError, iris.PrivateError(err))
+			return
+		}
+
+		ctx.WriteString(tokenString)
+	})
+
+	// j.Serve answers 401 unless the request carries a valid token in the
+	// "Authorization: Bearer <token>" header.
+	app.Get("/protected", j.Serve, func(ctx iris.Context) {
+		// The token that j.Serve verified.
+		token := j.Get(ctx)
+
+		claims := token.Claims.(jwt.MapClaims)
+		ctx.Writef("foo=%s", claims["foo"])
+	})
+
+	// To protect a group of routes: app.Router("/users", j.Serve)
+
+	app.Listen(":8080")
 }
 ```
 
-**7.** Get the verified claims, stored in the Context's `"jwt"` key:
+```sh
+TOKEN=$(curl -s http://localhost:8080/token)
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/protected
+```
+
+`j.CheckJWT(ctx)` runs the same check from inside a handler and returns the error instead of answering.
+
+## Config
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `ValidationKeyGetter` | none, required | Returns the key that verifies the signature: a shared secret or a public key. |
+| `SigningMethod` | none | When set, a token signed with another algorithm is refused. Set it. Without it the algorithm named in the token is trusted. |
+| `Expiration` | false | When true, a token without an `exp` claim is refused. An `exp` in the past is always refused. |
+| `Extractor` | `FromAuthHeader` | Where the token is read from. |
+| `ContextKey` | `"jwt"` | The Context key the verified `*jwt.Token` is stored under. `Middleware.Get(ctx)` reads it. |
+| `ErrorHandler` | `OnError` | Called with the error of a refused request. |
+| `CredentialsOptional` | false | When true, a request without a token passes and `Get(ctx)` returns nil. A token that is present must still be valid. |
+| `EnableAuthOnOptions` | false | When false, OPTIONS requests pass unchecked, for CORS preflight. |
+
+`OnError` answers `401 Unauthorized` with the error's text and stores the error on the Context, where `ctx.GetErr()` returns it.
+
+## Token extractors
+
+| Extractor | Reads the token from |
+| --- | --- |
+| `FromAuthHeader` | The `Authorization: Bearer <token>` request header. |
+| `FromParameter(name)` | The URL query parameter `name`. |
+| `FromFirst(extractors...)` | The first of the given extractors that finds one. |
+
+A token in a URL is written to access logs, kept in the browser history and sent in `Referer` headers. Use `FromParameter` only where a header cannot be set, such as a download link. The framework's own middleware stopped reading the URL by default in v14 for this reason.
 
 ```go
-func protectedHandler(ctx iris.Context) {
-    // Get the Token verified by the previous handler (of `j.Serve`).
-    user := ctx.Values().Get("jwt").(*jwt.Token)
+package main
 
-    // A map type of our stored Claims on this verified Token.
-    foobar := user.Claims.(jwt.MapClaims)
-    for key, value := range foobar {
-        ctx.Writef("%s = %s", key, value)
-    }
+import (
+	"github.com/kataras/iris/v14"
+
+	"github.com/iris-contrib/middleware/jwt"
+)
+
+func main() {
+	app := iris.New()
+
+	j := jwt.New(jwt.Config{
+		ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+			return []byte("My Secret"), nil
+		},
+		SigningMethod: jwt.SigningMethodHS256,
+		// The header first, then the "token" URL query parameter.
+		Extractor: jwt.FromFirst(jwt.FromAuthHeader, jwt.FromParameter("token")),
+	})
+
+	app.Get("/download", j.Serve, func(ctx iris.Context) {
+		ctx.WriteString("the file")
+	})
+
+	app.Listen(":8080")
 }
 ```
 
-By default the token is extracted from the `Authorization: Bearer $TOKEN` header. To change this behavior, set a custom `TokenExtractor` in the middleware's configuration. A `TokenExtractor` looks like that:
+A `TokenExtractor` is a `func(iris.Context) (string, error)`. Return an empty string and no error when the request has no token.
 
-```go
-type TokenExtractor func(iris.Context) (string, error)
-```
+## Names re-exported from golang-jwt
 
-The package contains some builtin extractors, like `FromParameter`. For example, to accept a token only from a `"token"` URL query parameter:
-
-```go
-j := jwt.New(jwt.Config{
-    // [...other fields]
-    Extractor: jwt.FromParameter("token"),
-})
-```
-
-You can also combine token extractors by wrapping them with `FromFirst`, e.g. try the "Authorization" header first and the "token" URL query parameter second:
-
-```go
-j := jwt.New(jwt.Config{
-    // [...other fields]
-    Extractor: jwt.FromFirst(jwt.FromAuthHeader, jwt.FromParameter("token")),
-})
-```
+`Token`, `MapClaims`, `Claims`, `NewToken`, `NewTokenWithClaims` and the signing methods `SigningMethodHS256`, `HS384`, `HS512`, `ES256`, `ES384` and `ES512`. For anything else import `github.com/golang-jwt/jwt/v4` directly.

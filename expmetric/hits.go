@@ -11,7 +11,7 @@ import (
 	"github.com/paulbellamy/ratecounter"
 )
 
-// HitsPerHour registers an expvar counter which increments
+// HitsPerMinute registers an expvar counter which holds
 // the number of hits for the last minute.
 func HitsPerMinute(options ...Option) iris.Handler {
 	opts := applyOptions(options)
@@ -25,7 +25,7 @@ func HitsPerMinute(options ...Option) iris.Handler {
 	return hits(time.Minute, opts)
 }
 
-// HitsPerHour registers an expvar counter which increments
+// HitsPerSecond registers an expvar counter which holds
 // the number of hits for the last second.
 func HitsPerSecond(options ...Option) iris.Handler {
 	opts := applyOptions(options)
@@ -37,7 +37,7 @@ func HitsPerSecond(options ...Option) iris.Handler {
 	return hits(time.Second, opts)
 }
 
-// HitsPerHour registers an expvar counter which increments
+// HitsPerHour registers an expvar counter which holds
 // the number of hits for the last hour.
 func HitsPerHour(options ...Option) iris.Handler {
 	opts := applyOptions(options)
@@ -103,21 +103,33 @@ func HitsTotalWithKeyFunc(keyFunc KeyFunc, options ...Option) iris.Handler {
 
 // HitsTotalPerUserEmail registers a Map expvar counter which increments
 // the number of hits per authenticated user's email.
+// A request without a user (see Context.SetUser) is not counted.
 func HitsTotalPerUserEmail(options ...Option) iris.Handler {
 	keyFunc := func(ctx iris.Context) string {
-		email, _ := ctx.User().GetEmail()
+		u := ctx.User()
+		if u == nil {
+			return ""
+		}
+
+		email, _ := u.GetEmail()
 		return email
 	}
 
 	return HitsTotalWithKeyFunc(keyFunc, options...)
 }
 
-// HitsTotalPerUserEmail registers a Map expvar counter which increments
+// HitsTotalPerUserID registers a Map expvar counter which increments
 // the number of hits per authenticated user's id.
+// A request without a user (see Context.SetUser) is not counted.
 func HitsTotalPerUserID(options ...Option) iris.Handler {
 	keyFunc := func(ctx iris.Context) string {
-		email, _ := ctx.User().GetID()
-		return email
+		u := ctx.User()
+		if u == nil {
+			return ""
+		}
+
+		id, _ := u.GetID()
+		return id
 	}
 
 	return HitsTotalWithKeyFunc(keyFunc, options...)

@@ -4,12 +4,16 @@ import (
 	stdContext "context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/kataras/iris/v14"
 	"github.com/kataras/iris/v14/context"
 	"github.com/kataras/iris/v14/rest/errors"
+
+	// Registers the PostgreSQL error mapping of the rest/errors package:
+	// no rows to 404, a duplicate key to 409, a foreign key violation and
+	// invalid input to 400. DefaultErrorHandler relies on it.
+	_ "github.com/kataras/iris/v14/rest/errors/pgerrors"
 
 	"github.com/kataras/golog"
 
@@ -37,11 +41,15 @@ type Options struct {
 	//
 	Trace bool `yaml:"Trace"` // If true then database tracer with Logger will be registered.
 	//
-	Transactional bool `yaml:"Transactional"` // If true then all requests will be executed in transaction.
-	CreateSchema  bool `yaml:"CreateSchema"`  // If true then schema will be created if not exists.
-	CheckSchema   bool `yaml:"CheckSchema"`   // If true then check the schema for missing tables and columns.
+	// If true then each request runs in a transaction. It is committed when
+	// the handlers return, and rolled back when one of them panics or stores
+	// an error on the Context (ctx.StopWithError, ctx.SetErr). Store
+	// pg.ErrIntentionalRollback to roll back a request that did not fail.
+	Transactional bool `yaml:"Transactional"`
+	CreateSchema  bool `yaml:"CreateSchema"` // If true then schema will be created if not exists.
+	CheckSchema   bool `yaml:"CheckSchema"`  // If true then check the schema for missing tables and columns.
 	//
-	// The error handler for the middleware.
+	// The error handler for the middleware and for the EntityController.
 	// The implementation can ignore the error and return false to continue to the default error handler.
 	ErrorHandler func(ctx iris.Context, err error) bool
 }
@@ -52,6 +60,12 @@ func (o *Options) getConnString() string {
 		o.Host, o.Port, o.User, o.Password, o.Schema, o.DBName, o.SSLMode)
 
 	return connString
+}
+
+// hasConnectionFields reports whether any of the connection fields is set.
+func (o *Options) hasConnectionFields() bool {
+	return o.Host != "" || o.Port != 0 || o.User != "" || o.Password != "" ||
+		o.Schema != "" || o.DBName != "" || o.SSLMode != ""
 }
 
 func (o *Options) getConnectionOptions() []pg.ConnectionOption {
@@ -65,36 +79,43 @@ func (o *Options) getConnectionOptions() []pg.ConnectionOption {
 }
 
 // DefaultErrorHandler is the default error handler for the PG middleware.
+// It answers through the framework's rest/errors package, like a handler
+// that calls errors.HandleError does:
+//
+//   - pg.ErrNoRows: 404
+//   - a duplicate key: 409
+//   - a foreign key violation: 400, naming the constraint
+//   - a value PostgreSQL could not parse (invalid input syntax): 400
+//   - a value that is not a number (strconv.ErrSyntax): 400
+//   - anything else: 500 with a generic message
+//
+// The database's own message, which names tables, columns and the offending
+// value, is logged and not sent to the client. A nil error reports false.
 var DefaultErrorHandler = func(ctx iris.Context, err error) bool {
-	if _, ok := pg.IsErrDuplicate(err); ok {
-		errors.AlreadyExists.Detail(ctx, "resource already exists", err.Error())
-	} else if _, ok = pg.IsErrInputSyntax(err); ok {
-		errors.InvalidArgument.Err(ctx, err)
-	} else if errors.Is(err, pg.ErrNoRows) {
-		errors.NotFound.Detail(ctx, "resource not found", err.Error())
-	} else if _, ok = pg.IsErrForeignKey(err); ok {
-		errors.InvalidArgument.Message(ctx, "reference entity does not exist")
-	} else if errors.Is(err, strconv.ErrSyntax) {
-		errors.InvalidArgument.Err(ctx, err)
-	} else if _, ok = pg.IsErrInputSyntax(err); ok {
-		errors.InvalidArgument.Err(ctx, err)
-	} else if errMsg := err.Error(); strings.Contains(errMsg, "syntax error in") ||
-		strings.Contains(errMsg, "invalid input syntax") {
-		if strings.Contains(errMsg, "invalid input syntax for type uuid") {
-			errors.InvalidArgument.Err(ctx, err)
-		} else {
-			errors.InvalidArgument.Detail(ctx, "invalid syntax", errMsg)
-		}
-	} else {
-		errors.Internal.Err(ctx, err)
+	if err == nil {
+		return false
 	}
 
+	if errors.Is(err, strconv.ErrSyntax) {
+		errors.InvalidArgument.Err(ctx, err)
+		return true
+	}
+
+	errors.HandleError(ctx, err)
 	return true
 }
 
 func (o *Options) handleError(ctx iris.Context, err error) bool {
 	if err == nil {
 		return false
+	}
+
+	// Keep the error on the Context, unless a handler stored one already:
+	// that is what rolls the request's transaction back, and what a logger
+	// registered outside the middleware reads. It is private, so nothing
+	// renders it to the client.
+	if ctx.GetErr() == nil {
+		ctx.SetErr(iris.PrivateError(err))
 	}
 
 	if o.ErrorHandler != nil {
@@ -147,16 +168,34 @@ func New(schema *pg.Schema, opts Options) *PG {
 }
 
 // NewFromDB returns a new PG middleware instance from an existing *pg.DB.
+//
+// The database is already open, so the connection fields of the options
+// (Host, Port, User, Password, Schema, DBName, SSLMode) and Trace must be
+// left unset: it panics otherwise. Set the tracer on the *pg.DB instead.
+// Transactional, CreateSchema, CheckSchema and ErrorHandler apply as in New.
 func NewFromDB(db *pg.DB, opts Options) *PG {
-	if len(opts.getConnectionOptions()) > 0 {
-		panic("pg.NewFromDB: options are not supported")
+	if opts.Trace {
+		panic("pg.NewFromDB: the Trace option is not supported, register the tracer when you open the database")
 	}
 
-	if opts.getConnString() != "" {
-		panic("pg.NewFromDB: connection string is not supported")
+	if opts.hasConnectionFields() {
+		panic("pg.NewFromDB: the connection fields are not supported, the database is already open")
 	}
 
-	// iris.RegisterOnInterrupt(db.Close)
+	ctx, cancel := stdContext.WithTimeout(stdContext.Background(), 10*time.Second)
+	defer cancel()
+
+	if opts.CreateSchema {
+		if err := db.CreateSchema(ctx); err != nil {
+			panic(err)
+		}
+	}
+
+	if opts.CheckSchema {
+		if err := db.CheckSchema(ctx); err != nil {
+			panic(err)
+		}
+	}
 
 	return &PG{
 		opts: opts,
@@ -218,7 +257,12 @@ func (p *PG) Handler() iris.Handler {
 				if rec := recover(); rec != nil {
 					_ = tx.Rollback(ctx)
 					panic(rec) // re-throw panic after RollbackDatabase.
-				} else if err != nil {
+				}
+
+				// The handlers have no return value: one that failed says so
+				// by storing an error on the Context. It plays the part of
+				// the error a pg.DB.InTransaction function returns.
+				if err := ctx.GetErr(); err != nil {
 					if errors.Is(err, pg.ErrIntentionalRollback) {
 						err = tx.Rollback(ctx)
 						if err != nil {
@@ -231,14 +275,12 @@ func (p *PG) Handler() iris.Handler {
 					if rollbackErr != nil {
 						err = fmt.Errorf("%w: %s", err, rollbackErr.Error())
 						p.opts.handleError(ctx, err)
-						return
 					}
-				} else {
-					err = tx.Commit(ctx)
-					if err != nil {
-						p.opts.handleError(ctx, err)
-						return
-					}
+					return
+				}
+
+				if err := tx.Commit(ctx); err != nil {
+					p.opts.handleError(ctx, err)
 				}
 			}()
 

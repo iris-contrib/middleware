@@ -51,12 +51,12 @@ func main() {
 
 	// Example ping request.
 	app.Get("/ping", func(ctx iris.Context) {
-		ctx.SetHeaderOverride("X-Request-Id", "1234-5678-9012")
+		ctx.SetHeader("X-Request-Id", "1234-5678-9012")
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 
 	app.Post("/ping", func(ctx iris.Context) {
-		ctx.SetHeaderOverride("X-Request-Id", "9012-5678-1234")
+		ctx.SetHeader("X-Request-Id", "9012-5678-1234")
 		ctx.Text("pong " + fmt.Sprint(time.Now().Unix()))
 	})
 

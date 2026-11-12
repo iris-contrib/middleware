@@ -5,14 +5,16 @@ import "github.com/kataras/iris/v14"
 func main() {
 	app := iris.New()
 
+	// CORS by hand, for every origin and without credentials.
+	// Browsers refuse "Access-Control-Allow-Origin: *" together with
+	// "Access-Control-Allow-Credentials: true", so the second is not sent.
 	crs := func(ctx iris.Context) {
-		ctx.SetHeaderOverride("Access-Control-Allow-Origin", "*")
-		ctx.SetHeaderOverride("Access-Control-Allow-Credentials", "true")
+		ctx.SetHeader("Access-Control-Allow-Origin", "*")
 
 		if ctx.Method() == iris.MethodOptions {
-			ctx.SetHeaderOverride("Access-Control-Methods", "POST, PUT, PATCH, DELETE")
-			ctx.SetHeaderOverride("Access-Control-Allow-Headers", "Access-Control-Allow-Origin,Content-Type")
-			ctx.SetHeaderOverride("Access-Control-Max-Age", "86400")
+			ctx.SetHeader("Access-Control-Allow-Methods", "POST, PUT, PATCH, DELETE")
+			ctx.SetHeader("Access-Control-Allow-Headers", "Content-Type")
+			ctx.SetHeader("Access-Control-Max-Age", "86400")
 			ctx.StatusCode(iris.StatusNoContent)
 			return
 		}

@@ -10,8 +10,7 @@ import (
 	cw "github.com/iris-contrib/middleware/cloudwatch"
 )
 
-// $ go get github.com/aws/aws-sdk-go/...
-// $ go run main.go
+// $ go run .
 
 func main() {
 	app := iris.New()
@@ -44,7 +43,7 @@ func main() {
 	})
 
 	// http://localhost:8080
-	// should give: NoCredentialProviders
-	// which is correct, you have to authorize your aws, we asumme that you know how to.
+	// Without AWS credentials the page is served and "NoCredentialProviders"
+	// is printed for each metric that could not be sent.
 	app.Listen(":8080")
 }

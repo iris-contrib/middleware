@@ -1,7 +1,10 @@
 .vscode
+.idea
 bolt.db
 .DS_Store
 go.work
 go.work.sum
 .plexon
 .claude
+*.exe
+*.test

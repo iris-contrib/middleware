@@ -18,7 +18,7 @@ type Config struct {
 	// Default value: "jwt"
 	ContextKey string
 	// The function that will be called when there's an error validating the token
-	// Default value:
+	// Default value: OnError
 	ErrorHandler errorHandler
 	// A boolean indicating if the credentials are required or not
 	// Default value: false
@@ -27,7 +27,7 @@ type Config struct {
 	// Default: FromAuthHeader (i.e., from Authorization header as bearer token)
 	Extractor TokenExtractor
 	// When set, all requests with the OPTIONS method will use authentication
-	// if you enable this option you should register your route with iris.Options(...) also
+	// if you enable this option you should register your route with app.Options(...) also
 	// Default: false
 	EnableAuthOnOptions bool
 	// When set, the middelware verifies that tokens are signed with the specific signing algorithm

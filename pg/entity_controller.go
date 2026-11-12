@@ -27,7 +27,6 @@ import (
 // - DELETE /{id} - deletes an entity by ID.
 // The {id} parameter is the entity ID. It can be a string, int, uint, uuid, etc.
 type EntityController[T any] struct {
-
 	repository *pg.Repository[T]
 
 	tableName      string
@@ -77,8 +76,10 @@ func (c *EntityController[T]) WithoutSchemaRoute() *EntityController[T] {
 	return c
 }
 
-// Configure registers the controller's routes.
-// It is called automatically by the Iris API Builder when registered to the Iris Application.
+// Routing registers the controller's routes.
+// The framework calls it when the controller is passed to a Router:
+//
+//	app.Router("/api/customer", pg.NewEntityController[Customer](pgMiddleware))
 func (c *EntityController[T]) Routing(r iris.Router) {
 	idParamName := fmt.Sprintf("%s_id", c.tableName)
 	idParam := fmt.Sprintf("/{%s}", idParamName)
@@ -129,11 +130,12 @@ func (c *EntityController[T]) handleError(ctx iris.Context, err error) bool {
 }
 
 // readPayload reads the request body and returns the entity.
+// The body is read the way the framework reads a typed request: a body that
+// is not valid JSON, or an entity whose Validate method returns an error,
+// is answered with 400 before the handler goes any further.
 func (c *EntityController[T]) readPayload(ctx iris.Context) (T, bool) {
-	var payload T
-	err := ctx.ReadJSON(&payload)
-	if err != nil {
-		errors.HandleError(ctx, err)
+	payload, ok := ctx.BindJSON[T]()
+	if !ok {
 		return payload, false
 	}
 
@@ -321,7 +323,7 @@ func (c *EntityController[T]) delete(ctx iris.Context) {
 	}
 
 	if !ok {
-		errors.NotFound.Detail(ctx, "resource not found", err.Error())
+		errors.NotFound.Message(ctx, "resource not found")
 		return
 	}
 

@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Every directory here is a Go module of its own.
+        # Keep the list in step with .github/dependabot.yml and the README.
+        module:
+          - casbin
+          - cloudwatch
+          - cors
+          - csrf
+          - expmetric
+          - jwt
+          - newrelic
+          - pg
+          - prometheus
+          - secure
+          - throttler
+          - tollboothic
+          - zap
+    defaults:
+      run:
+        working-directory: ${{ matrix.module }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # The Go version is the one the module's own go.mod asks for.
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ matrix.module }}/go.mod
+          cache-dependency-path: ${{ matrix.module }}/**/go.sum
+
+      - name: Format
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "These files are not formatted with gofmt:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      # go build ./... skips directories that start with an underscore, so the
+      # examples are built one by one. An example with a go.mod of its own
+      # (csrf/_example, zap/_examples/example_2) builds as that module, against
+      # this checkout through its replace directive. An example that has a
+      # test runs it.
+      - name: Examples
+        run: |
+          status=0
+          while IFS= read -r dir; do
+            echo "::group::$dir"
+            ( cd "$dir" && go build -o /dev/null . && go vet . ) || status=1
+            if compgen -G "$dir/*_test.go" > /dev/null; then
+              ( cd "$dir" && go test -race . ) || status=1
+            fi
+            echo "::endgroup::"
+          done < <(find . -path './_example*' -name main.go -exec dirname {} \; | sort)
+          exit $status

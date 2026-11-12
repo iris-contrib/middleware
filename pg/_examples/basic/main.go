@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/kataras/iris/v14"
+	"github.com/kataras/iris/v14/rest/errors"
 
 	"github.com/iris-contrib/middleware/pg"
 )
@@ -10,6 +11,11 @@ import (
 type Customer struct {
 	ID   string `json:"id" pg:"type=uuid,primary"`
 	Name string `json:"name" pg:"type=varchar(255)"`
+}
+
+// The body of the create and update requests.
+type customerInput struct {
+	Name string `json:"name"`
 }
 
 func newPostgresMiddleware() iris.Handler {
@@ -28,10 +34,9 @@ func newPostgresMiddleware() iris.Handler {
 		Trace:         true, // or false to production to disable query logging.
 		CreateSchema:  true, // true to create the schema if it doesn't exist.
 		CheckSchema:   true, // true to check the schema for missing tables and columns.
-		ErrorHandler: func(ctx iris.Context, err error) bool {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-			return true
-		},
+		// ErrorHandler is optional. It receives the errors of the middleware
+		// itself (a transaction that cannot start or commit). Without it they
+		// are answered by pg.DefaultErrorHandler.
 	}
 
 	p := pg.New(schema, opts)
@@ -50,7 +55,6 @@ func main() {
 	customerAPI.Put("/{id:uuid}", updateCustomer)
 	customerAPI.Delete("/{id:uuid}", deleteCustomer)
 
-	customerAPI.Router("/")
 	/*
 		Create Customer:
 
@@ -77,13 +81,21 @@ func main() {
 	app.Listen(":8080")
 }
 
+// fail answers a database error and marks the request as failed.
+//
+// errors.HandleError writes the response: 404 when there are no rows, 409 for
+// a duplicate key, 400 for a value PostgreSQL cannot parse and a generic 500
+// for anything else, without repeating the database's message to the client.
+// ctx.SetErr is what tells the transactional middleware to roll back.
+func fail(ctx iris.Context, err error) {
+	ctx.SetErr(iris.PrivateError(err))
+	errors.HandleError(ctx, err)
+}
+
 func createCustomer(ctx iris.Context) {
-	var payload = struct {
-		Name string `json:"name"`
-	}{}
-	err := ctx.ReadJSON(&payload)
-	if err != nil {
-		ctx.StopWithError(iris.StatusBadRequest, err)
+	// BindJSON answers 400 by itself when the body is not valid JSON.
+	payload, ok := ctx.BindJSON[customerInput]()
+	if !ok {
 		return
 	}
 
@@ -97,9 +109,9 @@ func createCustomer(ctx iris.Context) {
 	customer := Customer{
 		Name: payload.Name,
 	}
-	err = customers.InsertSingle(ctx, customer, &customer.ID)
+	err := customers.InsertSingle(ctx, customer, &customer.ID)
 	if err != nil {
-		ctx.StopWithError(iris.StatusInternalServerError, err)
+		fail(ctx, err)
 		return
 	}
 
@@ -118,12 +130,7 @@ func getCustomer(ctx iris.Context) {
 	// Get the customer by the id.
 	customer, err := customers.SelectByID(ctx, id)
 	if err != nil {
-		if pg.IsErrNoRows(err) {
-			ctx.StopWithStatus(iris.StatusNotFound)
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		}
-
+		fail(ctx, err) // 404 when there is no such customer.
 		return
 	}
 
@@ -135,12 +142,8 @@ func updateCustomer(ctx iris.Context) {
 	// Get the id from the path parameter.
 	id := ctx.Params().GetString("id")
 
-	var payload = struct {
-		Name string `json:"name"`
-	}{}
-	err := ctx.ReadJSON(&payload)
-	if err != nil {
-		ctx.StopWithError(iris.StatusBadRequest, err)
+	payload, ok := ctx.BindJSON[customerInput]()
+	if !ok {
 		return
 	}
 
@@ -153,19 +156,19 @@ func updateCustomer(ctx iris.Context) {
 		Name: payload.Name,
 	}
 
-	_, err = customers.UpdateOnlyColumns(ctx, []string{"name"}, customer)
+	n, err := customers.UpdateOnlyColumns(ctx, []string{"name"}, customer)
+	// OR customers.Update(ctx, customer)
 	if err != nil {
-		if pg.IsErrNoRows(err) {
-			ctx.StopWithStatus(iris.StatusNotFound)
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		}
+		fail(ctx, err)
+		return
+	}
 
+	if n == 0 {
+		errors.NotFound.Message(ctx, "customer not found")
 		return
 	}
 
 	// Display a success message.
-	ctx.StatusCode(iris.StatusOK)
 	ctx.JSON(iris.Map{"message": "Customer updated successfully"})
 }
 
@@ -177,18 +180,17 @@ func deleteCustomer(ctx iris.Context) {
 	customers := pg.Repository[Customer](ctx)
 
 	// Delete the customer by the id.
-	_, err := customers.Delete(ctx, Customer{ID: id})
+	deleted, err := customers.DeleteByID(ctx, id)
 	if err != nil {
-		if pg.IsErrNoRows(err) {
-			ctx.StopWithStatus(iris.StatusNotFound)
-		} else {
-			ctx.StopWithError(iris.StatusInternalServerError, err)
-		}
+		fail(ctx, err)
+		return
+	}
 
+	if !deleted {
+		errors.NotFound.Message(ctx, "customer not found")
 		return
 	}
 
 	// Display a success message.
-	ctx.StatusCode(iris.StatusOK)
 	ctx.JSON(iris.Map{"message": "Customer deleted successfully"})
 }

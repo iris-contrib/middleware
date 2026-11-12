@@ -1,29 +1,8 @@
-# CSRF
+# csrf
 
-CSRF is an Iris middleware that provides [cross-site request
-forgery](http://blog.codinghorror.com/preventing-csrf-and-xsrf-attacks/) (CSRF)
-protection. It includes:
+[Cross-site request forgery](https://owasp.org/www-community/attacks/csrf) protection for [Iris](https://github.com/kataras/iris) v14. A fork of [gorilla/csrf](https://github.com/gorilla/csrf) with a replaceable token [Store](store.go).
 
-- The `csrf.Protect` middleware/handler, which provides CSRF protection on
-  routes attached to a router or a sub-router.
-- A `csrf.Token` function that provides the token to pass into your response,
-  whether that be a HTML form or a JSON response body.
-- A `csrf.TemplateField` helper that you can pass into your templates to
-  replace a `{{ .csrfField }}` template tag with a hidden input field.
-
-> This package is a highly customized fork of the [gorilla/csrf](https://github.com/gorilla/csrf) package.
-> Unlike gorilla/csrf, it lets you customize the token [Store](store.go) (defaults to a cookie store) and pass cookie options as the standard Go net/http package evolves, without extra code on our side. See the [example](_example/main.go).
-
-## Contents
-
-  * [Install](#install)
-  * [Examples](#examples)
-    + [HTML Forms](#html-forms)
-    + [JavaScript Applications](#javascript-applications)
-    + [Setting SameSite](#setting-samesite)
-    + [Setting Options](#setting-options)
-  * [Design Notes](#design-notes)
-  * [License](#license)
+The middleware keeps a random token per browser, in a signed cookie by default. Every request gets a masked copy of it to embed in a form field or to send back in a header. A request with a method other than GET, HEAD, OPTIONS or TRACE must return that copy, or it is answered with `403 Forbidden`.
 
 ## Install
 
@@ -31,39 +10,19 @@ protection. It includes:
 go get github.com/iris-contrib/middleware/csrf@main
 ```
 
-Add the middleware to your router:
-
 ```go
-app := iris.New()
-// [...]
-CSRF := csrf.Protect([]byte("32-byte-long-auth-key"))
-app.Use(CSRF)
+import "github.com/iris-contrib/middleware/csrf"
 ```
 
-...then collect the token with `csrf.Token(ctx)` in your handlers before
-passing it to the template, JSON body or HTTP header (see below).
+## Example
 
-The authentication key passed to `csrf.Protect([]byte(key))` should be
-**32 bytes long and persist across application restarts**. Generating a random
-key won't allow you to authenticate existing cookies and will break your CSRF
-validation.
-
-CSRF inspects the HTTP headers (first) and form body (second) on
-subsequent POST/PUT/PATCH/DELETE/etc. requests for the token.
-
-### HTML Forms
-
-Here's the common use-case: HTML forms you want to protect from malicious POST
-requests:
+A JSON API whose client reads the token from a response header and sends it back in the `X-CSRF-Token` request header:
 
 ```go
 package main
 
 import (
 	"github.com/kataras/iris/v14"
-	"github.com/kataras/iris/v14/middleware/view"
-
-	"github.com/kataras/blocks"
 
 	"github.com/iris-contrib/middleware/csrf"
 )
@@ -71,225 +30,200 @@ import (
 func main() {
 	app := iris.New()
 
-	templates := blocks.New("./views").Reload(true)
-	if err := templates.Load(); err != nil {
-		panic(err)
-	}
-	app.UseRouter(view.Handler(templates))
-
-	CSRF := csrf.Protect(
-		// The authentication key must be 32 bytes long
-		// and persist across application restarts.
+	protect := csrf.Protect(
+		// The authentication key must be 32 bytes long and stay the same
+		// across restarts. A new key invalidates every cookie already issued.
 		[]byte("9AB0F421E53A477C084477AEA06096F5"),
-		// WARNING: Set it to true on production with HTTPS.
+		// The cookie is Secure by default, so it is not sent over plain HTTP.
+		// Turn that off for local development only.
 		csrf.Secure(false),
 	)
 
-	// All POST requests without a valid token return HTTP 403 Forbidden.
-	// We should also ensure that our mutating (non-idempotent) handler only
-	// matches on POST requests, here at the router level.
-	userAPI := app.Router("/user")
-	userAPI.Use(CSRF)
-	userAPI.Get("/signup", ShowSignupForm)
-	userAPI.Post("/signup", SubmitSignupForm)
+	api := app.Router("/api")
+	api.Use(protect)
+
+	// A GET request is never refused. It issues the cookie and the token.
+	api.Get("/user", func(ctx iris.Context) {
+		ctx.SetHeader("X-CSRF-Token", csrf.Token(ctx))
+		ctx.JSON(iris.Map{"name": "kataras"})
+	})
+
+	// A POST without the X-CSRF-Token header (or the "csrf.token" form
+	// field) and the cookie is answered with 403.
+	api.Post("/user", func(ctx iris.Context) {
+		ctx.JSON(iris.Map{"saved": true})
+	})
 
 	app.Listen(":8080")
 }
-
-func ShowSignupForm(ctx iris.Context) {
-	// views/user/signup.html just needs a {{ .csrfField }} template tag for
-	// csrf.TemplateField to inject the CSRF token into.
-	view.KeyValue(ctx, csrf.TemplateTag, csrf.TemplateField(ctx))
-	view.Render(ctx, "user/signup", "", nil)
-	// We could also retrieve the token directly from csrf.Token(ctx) and
-	// set it in a response header: ctx.SetHeaderOverride("X-CSRF-Token", token).
-	// This is useful if you're sending JSON to clients or a front-end
-	// JavaScript framework.
-}
-
-func SubmitSignupForm(ctx iris.Context) {
-	// We can trust that requests making it this far have satisfied
-	// our CSRF protection requirements.
-}
 ```
 
-The CSRF middleware will (by necessity) consume the request body if the token
-is passed via POST form values. If you need to consume this in your handler,
-insert your own middleware earlier in the chain to capture the request body.
+For an HTML form, pass `csrf.TemplateField(ctx)` to the template under the `csrf.TemplateTag` key (`csrfField`). It renders `<input type="hidden" name="csrf.token" value="...">`. The [_example](_example) directory is a complete form example. It is a Go module of its own because it needs a template engine, which the middleware does not depend on:
 
-### JavaScript Applications
+```sh
+cd _example
+go run .
+```
 
-This approach is useful if you're using a front-end JavaScript framework like
-React, Ember or Angular and are providing a JSON API. We need a way for the
-front-end fetch/AJAX calls to pass the token on each request. We achieve this
-by:
+## How a request is checked
 
-- Parsing the token from the `<input>` field generated by the
-  `csrf.TemplateField(ctx)` helper, or passing it back in a response header.
-- Sending this token back on every request.
-- Ensuring our cookie is attached to the request so that the form/header
-  value can be compared to the cookie value.
+1. `csrf.UnsafeSkipCheck(ctx)`, called by an earlier handler, skips everything below.
+2. The token is read from the store. When there is none, a new one is generated and saved, which sets the cookie.
+3. For GET, HEAD, OPTIONS and TRACE the check ends here.
+4. On HTTPS the `Referer` header must be present and its host must be the request's host or one of `Options.TrustedOrigins`.
+5. The token sent by the client is read from the request header first, then from the form field, and compared in constant time.
+
+`Vary: Cookie` is added to every response that passes.
+
+Reading the form field parses the request body as a form. A handler that needs the raw body of a form request must capture it in a middleware registered before this one.
+
+Step 4 looks at the connection of the Go server itself. Behind a proxy that terminates TLS the server sees plain HTTP, and the Referer check does not run.
+
+## Functions
+
+| Name | Description |
+| --- | --- |
+| `Protect(authKey []byte, cookieOpts ...CookieOption) iris.Handler` | The middleware, with the cookie store. |
+| `New(Options) *CSRF` | The same with every option. Panics without a `Store`. |
+| `(*CSRF).Protect` | The handler: runs `Filter`, then the next handler or `Options.ErrorHandler`. |
+| `(*CSRF).Filter(ctx) bool` | The check alone. It does not call the `ErrorHandler`. Works with `iris.NewConditionalHandler`. |
+| `(*CSRF).RequestToken(ctx) []byte` | The token the client sent, decoded. |
+| `Token(ctx) string` | The masked token of the current request. Empty when the middleware did not run. |
+| `TemplateField(ctx) template.HTML` | The hidden `<input>` field with the token. |
+| `FailureReason(ctx) error` | Why the request was refused. |
+| `UnsafeSkipCheck(ctx)` | Skips the check for this request. Call it before the middleware runs, and only for requests that cannot be forged, such as an API client that authenticates with a token. |
+| `UnauthorizedHandler` | The default `ErrorHandler`. |
+| `NewCookieStore(authKey []byte, cookieOpts ...CookieOption) Store` | The default store. |
+
+## Options
+
+| Field | Default | Description |
+| --- | --- | --- |
+| `Store` | required | Where the token is kept. `NewCookieStore`, or your own `Store`. |
+| `FieldName` | `csrf.token` | The form field the token is read from. |
+| `RequestHeader` | `X-CSRF-Token` | The request header the token is read from. |
+| `ErrorHandler` | `UnauthorizedHandler` | The handler of a refused request. |
+| `TrustedOrigins` | none | Hosts, other than the request's own, that a `Referer` may come from. List only hosts you control. |
+
+`New` returns a value with two handlers to choose from:
 
 ```go
-func GetUser(ctx iris.Context) {
-	// Authenticate the request, get the id from the route params,
-	// and fetch the user from the DB, etc.
+package main
 
-	// Get the token and pass it in the CSRF header. Our JSON-speaking client
-	// or JavaScript framework can now read the header and return the token
-	// in its own "X-CSRF-Token" request header on the subsequent POST.
-	ctx.SetHeaderOverride("X-CSRF-Token", csrf.Token(ctx))
-	ctx.JSON(user)
-}
-```
-
-In our JavaScript application, we should read the token from the response
-headers and pass it in a request header for all requests. Here's what that
-looks like when using [Axios](https://github.com/axios/axios), a popular
-JavaScript HTTP client library:
-
-```js
-// You can alternatively parse the response header for the X-CSRF-Token, and
-// store that instead, if you followed the steps above to write the token to a
-// response header.
-let csrfToken = document.getElementsByName("csrf.token")[0].value
-
-// via https://github.com/axios/axios#creating-an-instance
-const instance = axios.create({
-  baseURL: "https://example.com/api/",
-  timeout: 1000,
-  headers: { "X-CSRF-Token": csrfToken }
-})
-
-// Now, any HTTP request you make will include the csrfToken from the page,
-// provided you update the csrfToken variable for each render.
-try {
-  let resp = await instance.post(endpoint, formData)
-  // Do something with resp
-} catch (err) {
-  // Handle the exception
-}
-```
-
-If you plan to host your JavaScript application on another domain, you can use
-the Trusted Origins feature to allow that host to make requests to your Go
-application:
-
-```go
-CSRF := csrf.New(csrf.Options{
-    TrustedOrigins: []string{"ui.domain.com"},
-    Store: csrf.NewCookieStore(
-        []byte("9AB0F421E53A477C084477AEA06096F5"), csrf.Secure(false)),
-}).Protect
-```
-
-The example above authorizes requests from `ui.domain.com` to make valid CSRF
-requests to your application; the API can live on a different domain than the
-UI without problems.
-
-### Setting SameSite
-
-The SameSite cookie attribute instructs the browser to not include the cookie
-during a cross-site request. `SameSiteStrictMode` prevents all cross-site
-requests from including the cookie. `SameSiteLaxMode` prevents CSRF-prone
-requests (POST) from including the cookie but allows the cookie on GET
-requests, to support external linking.
-
-```go
 import (
-    "net/http"
+	"github.com/kataras/iris/v14"
 
-    "github.com/kataras/iris/v14"
-
-    "github.com/iris-contrib/middleware/csrf"
+	"github.com/iris-contrib/middleware/csrf"
 )
 
 func main() {
-    CSRF := csrf.Protect(
-      []byte("a-32-byte-long-key-goes-here"),
-      // instruct the browser to never send cookies during cross site requests
-      csrf.SameSite(http.SameSiteStrictMode),
-    )
+	app := iris.New()
 
-    // [...]
+	c := csrf.New(csrf.Options{
+		Store: csrf.NewCookieStore(
+			[]byte("9AB0F421E53A477C084477AEA06096F5"), csrf.Secure(false)),
+		TrustedOrigins: []string{"ui.example.com"},
+		ErrorHandler: func(ctx iris.Context) {
+			ctx.Application().Logger().Warnf("csrf: %v", csrf.FailureReason(ctx))
+			ctx.StopWithJSON(iris.StatusForbidden, iris.Map{"error": "forbidden"})
+		},
+	})
+
+	// The middleware.
+	app.Use(c.Protect)
+
+	// Or the check alone, when the handler decides what a failure means.
+	app.Post("/optional", func(ctx iris.Context) {
+		if !c.Filter(ctx) {
+			ctx.WriteString("not verified")
+			return
+		}
+		ctx.WriteString("verified")
+	})
+
+	app.Listen(":8080")
 }
 ```
 
-### Setting Options
+### The default error response
 
-What about providing your own error handler or store and changing the HTTP
-header the package inspects on requests? (i.e. an existing API you're porting
-to Go). CSRF provides options for changing these as you see fit:
+`UnauthorizedHandler` answers `403 Forbidden` with the reason as plain text, one of:
+
+| Error | Text |
+| --- | --- |
+| `ErrNoReferer` | `referer not supplied` |
+| `ErrBadReferer` | `referer invalid` |
+| `ErrNoToken` | `CSRF token not found in request` |
+| `ErrBadToken` | `CSRF token invalid` |
+
+When the token could not be generated or saved, the failure is the server's. The response is a 403 with no body, and `FailureReason(ctx)` returns the store's error for your logs.
+
+### Cookie options
+
+The cookie store issues a cookie named `_iris_csrf`, signed with the authentication key through [gorilla/securecookie](https://github.com/gorilla/securecookie).
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `CookieName(string)` | `_iris_csrf` | The cookie's name. |
+| `Secure(bool)` | true | Send the cookie over HTTPS only. |
+| `HTTPOnly(bool)` | true | Hide the cookie from scripts. |
+| `SameSite(http.SameSite)` | `http.SameSiteLaxMode` | The SameSite attribute. `Strict` also keeps the cookie off requests that follow a link from another site. |
+| `MaxAge(int)` | 43200 (12 hours) | Lifetime in seconds. 0 makes it a session cookie. |
+| `Domain(string)` | the request's host | The cookie's domain. |
+| `Path(string)` | the path the cookie was issued from | The cookie's path. Set `csrf.Path("/")` when forms and their targets live under different paths. |
+
+## A custom store
+
+A `Store` reads and saves the unmasked token for a request. Implement it to keep the token in a server-side session instead of a cookie:
 
 ```go
-CSRF := csrf.New(csrf.Options{
-    TrustedOrigins: []string{"ui.domain.com"},
-    RequestHeader: "X-CSRF-Token",
-    FieldName:     "csrf.token",
-    ErrorHandler:  csrf.UnauthorizedHandler,
-    Store: csrf.NewCookieStore(
-        []byte("9AB0F421E53A477C084477AEA06096F5"), csrf.Secure(false)),
-})
-```
+package main
 
-The `CSRF.Filter` method:
+import (
+	"errors"
 
-```go
-func access(ctx iris.Context) {
-    if CSRF.Filter(ctx) {
-        // Succeed.
-    } else {
-        // It's a failure.
-        // Customize the error response, the ErrorHandler is not called.
-    }
+	"github.com/kataras/iris/v14"
+
+	"github.com/iris-contrib/middleware/csrf"
+)
+
+// memoryStore keeps the tokens in memory, by a session id that an
+// earlier middleware is expected to have stored on the Context.
+type memoryStore struct {
+	tokens map[string][]byte
+}
+
+func (s *memoryStore) Get(ctx iris.Context) ([]byte, error) {
+	token, ok := s.tokens[ctx.Values().GetString("session_id")]
+	if !ok {
+		return nil, errors.New("no token for this session")
+	}
+	return token, nil
+}
+
+func (s *memoryStore) Save(ctx iris.Context, token []byte) error {
+	s.tokens[ctx.Values().GetString("session_id")] = token
+	return nil
+}
+
+func main() {
+	app := iris.New()
+
+	store := &memoryStore{tokens: make(map[string][]byte)}
+	app.Use(csrf.New(csrf.Options{Store: store}).Protect)
+
+	app.Listen(":8080")
 }
 ```
 
-OR use the `iris.NewConditionalHandler`:
+The map above is not safe for concurrent requests. A real store needs a lock or a database.
 
-```go
-app.Get("/protected", iris.NewConditionalHandler(CSRF.Filter, protectedHandler))
-```
+## Design notes
 
-The main `CSRF.Protect` method (same as the `csrf.Protect` package-level
-function we've seen in the previous examples):
-
-```go
-app.Use(CSRF.Protect)
-```
-
-Not too bad, right?
-
-If there's something you're confused about or a feature you would like to see
-added, open an issue.
-
-## Design Notes
-
-Getting CSRF protection right is important, so here's some background:
-
-- This library generates unique-per-request (masked) tokens as a mitigation
-  against the [BREACH attack](http://breachattack.com/).
-- The 'base' (unmasked) token is stored in the session, which means that
-  multiple browser tabs won't cause a user problems as their per-request token
-  is compared with the base token.
-- Operates on a "whitelist only" approach where safe (non-mutating) HTTP methods
-  (GET, HEAD, OPTIONS, TRACE) are the _only_ methods where token validation is not
-  enforced.
-- The design follows the
-  [Django](https://docs.djangoproject.com/en/1.8/ref/csrf/) and [Ruby on
-  Rails](http://api.rubyonrails.org/classes/ActionController/RequestForgeryProtection.html)
-  approaches.
-- Cookies are authenticated and based on the [securecookie](https://github.com/gorilla/securecookie)
-  library. They're also Secure (issued over HTTPS only) and are HttpOnly
-  by default, because sane defaults are important.
-- The cookie SameSite attribute (prevents cookies from being sent by a browser
-  during cross-site requests) is not set by default, to maintain backwards
-  compatibility for legacy systems. It can be set with the SameSite option.
-- Go's `crypto/rand` library is used to generate the 32 byte (256 bit) tokens
-  and the one-time-pad used for masking them.
-
-This library does not seek to be adventurous.
+- The token is masked with a one-time pad on every request, which mitigates the [BREACH](http://breachattack.com/) attack. The unmasked token stays the same for the life of the cookie, so several open tabs keep working.
+- Tokens and pads are 32 bytes from `crypto/rand`.
+- Only the safe methods (GET, HEAD, OPTIONS, TRACE) skip the comparison. Everything else is checked.
 
 ## License
 
-BSD licensed. See the LICENSE file for details.
+BSD licensed. See the [LICENSE](LICENSE) file.

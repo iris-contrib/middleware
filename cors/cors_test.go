@@ -81,3 +81,100 @@ func TestCorsAllowOrigins(t *testing.T) {
 	r.Header("Access-Control-Allow-Headers").IsEmpty()
 	r.Header("Access-Control-Max-Age").IsEmpty()
 }
+
+// TestCorsVaryAppends proves the middleware adds to the Vary header instead of
+// replacing it: a Vary an earlier middleware (compression, for one) already set
+// must survive. In v14 `ctx.SetHeader` replaces, so the middleware uses
+// `ctx.AddHeader` for this list-valued header.
+func TestCorsVaryAppends(t *testing.T) {
+	origin := "https://iris-go.com"
+	opts := cors.Options{
+		AllowedOrigins: []string{origin},
+		AllowedMethods: []string{"GET"},
+	}
+
+	app := iris.New()
+	app.UseRouter(func(ctx iris.Context) { // stands in for the compression middleware.
+		ctx.AddHeader("Vary", "Accept-Encoding")
+		ctx.Next()
+	})
+	app.UseRouter(cors.New(opts))
+
+	app.Get("/", func(ctx iris.Context) { ctx.WriteString("OK") })
+
+	e := httptest.New(t, app)
+
+	// the actual request: cors adds "Origin".
+	r := e.GET("/").WithHeader("Origin", origin).Expect().Status(httptest.StatusOK)
+	r.Headers().Value("Vary").Array().ConsistsOf("Accept-Encoding", "Origin")
+
+	// the preflight request: cors adds the three request-header names.
+	r = e.OPTIONS("/").WithHeader("Origin", origin).
+		WithHeader("Access-Control-Request-Method", "GET").
+		Expect().Status(httptest.StatusOK)
+	r.Headers().Value("Vary").Array().ConsistsOf("Accept-Encoding",
+		"Origin, Access-Control-Request-Method, Access-Control-Request-Headers")
+}
+
+// Registered on a group of routes the middleware needs the group to answer
+// OPTIONS as well, which Router.AllowMethods takes care of.
+func TestCorsPerRouter(t *testing.T) {
+	origin := "https://iris-go.com"
+
+	app := iris.New()
+
+	api := app.Router("/api")
+	api.AllowMethods(iris.MethodOptions)
+	api.Use(cors.New(cors.Options{
+		AllowedOrigins: []string{origin},
+		AllowedMethods: []string{"GET"},
+	}))
+	api.Get("/items", func(ctx iris.Context) { ctx.WriteString("items") })
+
+	app.Get("/other", func(ctx iris.Context) { ctx.WriteString("other") })
+
+	e := httptest.New(t, app)
+
+	// the preflight request of a route of the group.
+	r := e.OPTIONS("/api/items").WithHeader("Origin", origin).
+		WithHeader("Access-Control-Request-Method", "GET").
+		Expect().Status(httptest.StatusOK)
+	r.Header("Access-Control-Allow-Origin").IsEqual(origin)
+	r.Header("Access-Control-Allow-Methods").IsEqual("GET")
+	r.Body().IsEmpty()
+
+	// the actual request.
+	r = e.GET("/api/items").WithHeader("Origin", origin).Expect().Status(httptest.StatusOK)
+	r.Body().IsEqual("items")
+	r.Header("Access-Control-Allow-Origin").IsEqual(origin)
+
+	// a route outside the group is not touched.
+	r = e.GET("/other").WithHeader("Origin", origin).Expect().Status(httptest.StatusOK)
+	r.Headers().NotContainsKey("Access-Control-Allow-Origin")
+}
+
+// With every origin allowed the answer is "*", and credentials are not
+// mentioned. With AllowCredentials as well, as AllowAll is configured, the
+// answer names the origin of the request instead: any origin may then send
+// credentialed requests. The README warns about that combination.
+func TestCorsWildcardAndCredentials(t *testing.T) {
+	h := func(ctx iris.Context) { ctx.WriteString("ok") }
+
+	app := iris.New()
+	app.UseRouter(cors.Default())
+	app.Get("/", h)
+
+	r := httptest.New(t, app).GET("/").WithHeader("Origin", "https://anything.example").
+		Expect().Status(httptest.StatusOK)
+	r.Header("Access-Control-Allow-Origin").IsEqual("*")
+	r.Headers().NotContainsKey("Access-Control-Allow-Credentials")
+
+	app = iris.New()
+	app.UseRouter(cors.AllowAll())
+	app.Get("/", h)
+
+	r = httptest.New(t, app).GET("/").WithHeader("Origin", "https://anything.example").
+		Expect().Status(httptest.StatusOK)
+	r.Header("Access-Control-Allow-Origin").IsEqual("https://anything.example")
+	r.Header("Access-Control-Allow-Credentials").IsEqual("true")
+}
