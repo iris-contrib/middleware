@@ -5,7 +5,7 @@ go 1.27
 require (
 	github.com/iris-contrib/middleware/zap v0.0.0
 	github.com/kataras/iris/v14 v14.0.0
-	go.opentelemetry.io/otel/trace v1.45.0
+	go.opentelemetry.io/otel/trace v1.47.0
 	go.uber.org/zap v1.28.0
 )
 
@@ -26,7 +26,7 @@ require (
 	github.com/schollz/closestmatch v2.1.0+incompatible // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
-	go.opentelemetry.io/otel v1.45.0 // indirect
+	go.opentelemetry.io/otel v1.47.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.59.0 // indirect
 	golang.org/x/net v0.62.0 // indirect
