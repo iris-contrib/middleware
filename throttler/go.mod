@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/kataras/iris/v14 v14.0.0
-	github.com/throttled/throttled/v2 v2.15.0
+	github.com/throttled/throttled/v2 v2.15.1
 )
 
 require (
