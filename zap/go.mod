@@ -3,7 +3,7 @@ module github.com/iris-contrib/middleware/zap
 go 1.27
 
 require (
-	github.com/kataras/iris/v14 v14.0.0
+	github.com/kataras/iris/v14 v14.0.1
 	go.uber.org/zap v1.28.0
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/imkira/go-interpol v1.1.0 // indirect
 	github.com/iris-contrib/httpexpect/v2 v2.15.2 // indirect
 	github.com/iris-contrib/schema v0.0.7-0.20250208085038-f68827b0bbfa // indirect
-	github.com/kataras/golog v0.2.0 // indirect
+	github.com/kataras/golog v0.2.1 // indirect
 	github.com/kataras/httpclient v0.2.0 // indirect
 	github.com/kataras/jwt v0.3.0 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
