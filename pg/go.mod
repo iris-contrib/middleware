@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/jackc/pgx/v5 v5.13.0
-	github.com/kataras/golog v0.2.0
+	github.com/kataras/golog v0.2.1
 	github.com/kataras/iris/v14 v14.0.0
 	github.com/kataras/pg v1.0.17
 	github.com/kataras/pgx-golog v0.0.2
