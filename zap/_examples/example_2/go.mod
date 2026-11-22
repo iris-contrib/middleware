@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/iris-contrib/middleware/zap v0.0.0
-	github.com/kataras/iris/v14 v14.0.0
+	github.com/kataras/iris/v14 v14.0.1
 	go.opentelemetry.io/otel/trace v1.45.0
 	go.uber.org/zap v1.28.0
 )
@@ -18,7 +18,7 @@ require (
 	github.com/gomarkdown/markdown v0.0.0-20261109103609-13f93121d67a // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/iris-contrib/schema v0.0.7-0.20250208085038-f68827b0bbfa // indirect
-	github.com/kataras/golog v0.2.0 // indirect
+	github.com/kataras/golog v0.2.1 // indirect
 	github.com/kataras/httpclient v0.2.0 // indirect
 	github.com/kataras/jwt v0.3.0 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
